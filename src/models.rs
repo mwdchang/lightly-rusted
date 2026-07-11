@@ -11,6 +11,11 @@ pub struct Node {
     children: Vec<Node>
 }
 
+pub struct Scene {
+    description: String,
+    root: Node
+}
+
 impl Node {
     pub fn new(mesh_id: Option<String>) -> Self {
         Self {
@@ -22,12 +27,20 @@ impl Node {
         }
     }
 
+    pub fn get_mesh_id(&self) -> &Option<String> {
+        &self.mesh_id
+    }
+
     pub fn get_transform_local(&self) -> Matrix4<f32> {
         self.transform_local
     }
 
     pub fn get_transform_world(&self) -> Matrix4<f32> {
         self.transform_world
+    }
+
+    pub fn get_children(&self) -> &Vec<Node> {
+        &self.children
     }
 
     pub fn get_child(&mut self, index: usize) -> Option<&Node> {
@@ -59,7 +72,20 @@ impl Node {
     }
 }
 
-pub struct Scene {
-    description: String,
-    root: Node
+
+impl Scene {
+    pub fn new(desc: String, root: Node) -> Self {
+        Self {
+            description: desc,
+            root
+        }
+    }
+
+    pub fn get_root(&self) -> &Node {
+        &self.root
+    }
+
+    pub fn get_root_mut(&mut self) -> &mut Node {
+        &mut self.root
+    }
 }
