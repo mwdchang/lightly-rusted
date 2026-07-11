@@ -1,0 +1,8 @@
+[package]
+name = "lightly-rusted"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nalgebra = "0.34"
+image = "0.25"

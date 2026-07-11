@@ -1,0 +1,63 @@
+use nalgebra::Matrix4;
+use nalgebra::{Matrix3, Vector3};
+
+mod models;
+use models::Scene;
+use models::Node;
+
+mod utils;
+use utils::translate;
+use utils::rotate_x;
+use utils::rotate_y;
+use utils::rotate_z;
+
+
+fn main() {
+
+    let mut root = Node::new( 
+        Some("test".to_string()),
+    );
+
+    let child = Node::new(
+        Some("child".to_string()),
+    );
+
+    root.add_child(child);
+    // root.set_world_transform(
+    //     translate(Vector3::new(5.0, 0.0, 0.0))
+    // );
+
+    root.set_transform(
+        translate(Vector3::new(5.0, 0.0, 0.0))
+    );
+
+
+    println!("Root:\n{}", root.get_transform_world());
+    println!("Child:\n{}", root.get_child(0).unwrap().get_transform_world());
+
+    // let v = Vector3::new(1.0, 2.0, 3.0);
+    // let m = Matrix3::new(
+    //     1.0, 2.0, 3.0,
+    //     0.0, 1.0, 4.0,
+    //     5.0, 6.0, 0.0,
+    // );
+
+
+    // println!("Matrix:\n{}", m);
+    // println!("Vector:\n{}", v);
+
+    // let result = m * v;
+    // println!("Result:\n{}", result);
+
+
+    // let result2 =  v * v.transpose();
+    // println!("Result2:\n{}", result2);
+
+    // let result3 =  v.transpose() * v;
+    // println!("Result3:\n{}", result3);
+
+
+    // let t1 = translate(Vector3::new(5.0, 0.0, 0.0));
+    // let t2 = translate(Vector3::new(0.0, 4.0, 0.0));
+    // println!("Translate:\n{}", t1 * t2);
+}
