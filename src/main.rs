@@ -20,6 +20,15 @@ use utils::translate;
 use std::process;
 
 use crate::models::PointLight;
+use crate::models::Material;
+use crate::models::read_scene;
+use crate::utils::scale;
+
+use std::collections::HashMap;
+
+
+
+
 
 
 /** format
@@ -31,16 +40,21 @@ end, { desc = "Format file" })
 
 // Placeholder for real geometry intersection.
 // Later this will contain sphere/triangle tests.
-fn intersect(camera: &Camera, ray: &Ray, scene: &Scene) -> Vector3<f32> {
+fn intersect(
+    camera: &Camera, 
+    ray: &Ray, 
+    scene: &Scene
+) -> Vector3<f32> {
 
     fn visit(node: &Node, ray: &Ray, hits: &mut Vec<HitRecord>) {
         // println!("{:?}", node.get_transform_world());
-
-        let inv = (
-            node.get_transform_local() * 
-            node.get_transform_world()
-        ).try_inverse().unwrap();
-
+        // let inv = (
+        //     node.get_transform_local() * 
+        //     node.get_transform_world()
+        // ).try_inverse().unwrap();
+        
+        // Transform ray to local coordinate space
+        let inv = node.get_transform_inverse();
         let new_direction = inv.transform_vector(&ray.direction);
         let p = Point3::new(
             ray.origin[0],
@@ -60,24 +74,20 @@ fn intersect(camera: &Camera, ray: &Ray, scene: &Scene) -> Vector3<f32> {
         };
 
         if node.get_mesh_id().as_deref() == Some("sphere") {
-            // println!("{}", new_origin_vec);
-
-            // println!("checking sphere");
             if let Some(t) = intersect_unit_sphere(n_ray.origin, n_ray.direction) {
                 let hit_point = n_ray.origin + n_ray.direction * t;
-                // println!("Hit at {:?}", hit_point);
                 hits.push( HitRecord {
                     t,
                     point: hit_point,
                     // normal: Vector3::new(0.0, 0.0, 0.0),
                     normal: hit_point.normalize(),
-                    material_id: 0,
+                    material_id: node.get_material_id(),
                     front_face: true
                 })
             }
         }
 
-
+        // Recurse
         for child in node.get_children() {
             visit(child, ray, hits);
         }
@@ -91,26 +101,28 @@ fn intersect(camera: &Camera, ray: &Ray, scene: &Scene) -> Vector3<f32> {
         return Vector3::new(0.0, 0.0, 0.0)
     }
 
-    // TODO: Need to sort hits-buffers
-    // TODO: All lights
-    // TODO shine material
+    // TODO: Need to sort hits/depth-buffers
+    // TODO: All light sources
+    // TODO: check shine material
     
-    let light = scene.get_point_lights().get(0);
-    let hit = hits.get(0);
+    let light = scene.get_point_lights().get(0).unwrap();
+    let hit = hits.get(0).unwrap();
 
-    let to_light = light.unwrap().position - hit.unwrap().point;
+    let to_light = light.position - hit.point;
     let distance = to_light.norm();
     let light_dir = to_light / distance;
 
-    let attenuation = 1.0 / (distance * distance);
+    // let attenuation = 1.0 / (distance * distance);
+    let attenuation = 2.5 / (distance * distance);
 
-    let ndotl = hit.unwrap().normal.dot(&light_dir).max(1.0);
+    let ndotl = hit.normal.dot(&light_dir).max(1.0);
+
+    let material = scene.get_materials().get(hit.material_id as usize).unwrap();
 
     let contribution =
-        // material.albedo
-        (Vector3::new(1.0, 0.5, 0.2)).component_mul(    
-            &light.unwrap().intensity
-        )
+        material.albedo.component_mul(
+            &light.intensity
+        )   
         * attenuation
         * ndotl;
     
@@ -123,22 +135,23 @@ fn intersect(camera: &Camera, ray: &Ray, scene: &Scene) -> Vector3<f32> {
     let specular = light.unwrap().intensity * spec;
     */
     
-    let shine:f32 = 200.0;
-    let view_dir = (camera.get_position() - hit.unwrap().point).normalize();
+    let view_dir = (camera.get_position() - hit.point).normalize();
     let halfway = (light_dir + view_dir).normalize();
-    let spec = hit.unwrap().normal
+    let spec = hit.normal
         .dot(&halfway)
         .max(0.0)
-        .powf(shine);
-    let specular = light.unwrap().intensity * spec;
+        .powf(material.shine);
+    let specular = light.intensity * spec;
 
-    // println!("contribution {}", contribution);
     return contribution + specular;
-    // Orange
-    // return Vector3::new(1.0, 0.5, 0.0)
 }
 
-fn render(width: u32, height: u32, camera: &Camera, scene: &Scene) -> RgbImage {
+fn render(
+    width: u32, 
+    height: u32, 
+    camera: &Camera, 
+    scene: &Scene
+) -> RgbImage {
     let mut image = RgbImage::new(width, height);
     for y in 0..height {
         for x in 0..width {
@@ -182,19 +195,33 @@ fn main() {
         height,
     );
 
+    let mut scene = read_scene("scene01.json");
+
     // Scene building
     let mut root = Node::new(None);
 
-    let child = Node::new(
+    let mut child = Node::new(
         Some("sphere".to_string()),
     );
+    child.set_material_id(0);
+
+    let mut child2 = Node::new(
+        Some("sphere".to_string()),
+    );
+    child2.set_transform(
+        translate(Vector3::new(0.0, -3.0, -12.0)) * scale(Vector3::new(6.0, 6.0, 6.0))
+    );
+    child2.set_material_id(2);
+
+
 
     let mut group = Node::new(
         Some("group".to_string()),
     );
-    let group_child = Node::new(
+    let mut group_child = Node::new(
         Some("sphere".to_string()),
     );
+    group_child.set_material_id(1);
 
 
     group.set_transform(
@@ -203,20 +230,14 @@ fn main() {
     group.add_child(group_child);       
 
     root.add_child(child);
+    root.add_child(child2);
     root.add_child(group);
 
+    scene.set_root(root);
 
-    let mut scene = Scene::new("test scene".to_string(), root);
-    scene.add_point_light(PointLight {
-        position: Vector3::new(8.0, 8.0, 8.0),
-        intensity: Vector3::new(100.0, 100.0, 200.0)
-    });
-
-    // scene.print_tree();
-
+    scene.print_tree();
 
     let image = render(width, height, &camera, &scene);
     image.save("render-result.png").expect("Failed to save PNG");
-
     println!("Rendered {}x{} image", width, height);
 }
