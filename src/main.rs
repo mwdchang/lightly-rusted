@@ -31,7 +31,7 @@ end, { desc = "Format file" })
 
 // Placeholder for real geometry intersection.
 // Later this will contain sphere/triangle tests.
-fn intersect(ray: &Ray, scene: &Scene) -> Vector3<f32> {
+fn intersect(camera: &Camera, ray: &Ray, scene: &Scene) -> Vector3<f32> {
 
     fn visit(node: &Node, ray: &Ray, hits: &mut Vec<HitRecord>) {
         // println!("{:?}", node.get_transform_world());
@@ -93,6 +93,7 @@ fn intersect(ray: &Ray, scene: &Scene) -> Vector3<f32> {
 
     // TODO: Need to sort hits-buffers
     // TODO: All lights
+    // TODO shine material
     
     let light = scene.get_point_lights().get(0);
     let hit = hits.get(0);
@@ -113,8 +114,26 @@ fn intersect(ray: &Ray, scene: &Scene) -> Vector3<f32> {
         * attenuation
         * ndotl;
     
+    /*
+    let shine:f32 = 300.0;
+    let view_dir = (camera.get_position() - hit.unwrap().point).normalize();
+    let reflect_dir = -light_dir - 2.0 * (-light_dir).dot(&hit.unwrap().normal) * hit.unwrap().normal;
+    let reflect_dir = reflect_dir.normalize();
+    let spec = view_dir.dot(&reflect_dir).max(0.0).powf(shine);
+    let specular = light.unwrap().intensity * spec;
+    */
+    
+    let shine:f32 = 200.0;
+    let view_dir = (camera.get_position() - hit.unwrap().point).normalize();
+    let halfway = (light_dir + view_dir).normalize();
+    let spec = hit.unwrap().normal
+        .dot(&halfway)
+        .max(0.0)
+        .powf(shine);
+    let specular = light.unwrap().intensity * spec;
+
     // println!("contribution {}", contribution);
-    return contribution;
+    return contribution + specular;
     // Orange
     // return Vector3::new(1.0, 0.5, 0.0)
 }
@@ -125,7 +144,7 @@ fn render(width: u32, height: u32, camera: &Camera, scene: &Scene) -> RgbImage {
         for x in 0..width {
             let ray = camera.generate_ray(x, y, width, height);
 
-            let color = intersect(&ray, &scene);
+            let color = intersect(&camera, &ray, &scene);
 
             image.put_pixel(
                 x,
@@ -151,7 +170,7 @@ fn main() {
     // Camera parameters
     // let camera_position = Vector3::new(0.0, 2.0, 5.0);
     // let camera_target = Vector3::new(0.0, 0.0, 0.0);
-    let camera_position = Vector3::new(0.0, 0.0, 8.0);
+    let camera_position = Vector3::new(0.0, 0.0, 6.0);
     let camera_target = Vector3::new(0.0, 0.0, 0.0);
 
     let camera = Camera::look_at(
@@ -190,7 +209,7 @@ fn main() {
     let mut scene = Scene::new("test scene".to_string(), root);
     scene.add_point_light(PointLight {
         position: Vector3::new(8.0, 8.0, 8.0),
-        intensity: Vector3::new(300.0, 300.0, 800.0)
+        intensity: Vector3::new(100.0, 100.0, 200.0)
     });
 
     // scene.print_tree();

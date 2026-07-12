@@ -47,6 +47,10 @@ impl Camera {
         }
     }
 
+    pub fn get_position(&self) -> Vector3<f32> {
+        self.position
+    }
+
     pub fn generate_ray(&self, x: u32, y: u32, width: u32, height: u32) -> Ray {
         // Convert pixel coordinate into normalized device coordinates
         // range: [-1, 1]
