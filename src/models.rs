@@ -4,6 +4,12 @@ use nalgebra::{Matrix4, Vector3};
 use serde_json::Value;
 use std::fs::File;
 
+use crate::utils::translate;
+use crate::utils::rotate_x;
+use crate::utils::rotate_y;
+use crate::utils::rotate_z;
+use crate::utils::scale;
+
 
 pub struct PointLight {
     pub position: Vector3<f32>,
@@ -145,9 +151,9 @@ impl Node {
         // println!("{}  Local Transform:", indent);
         // println!("{}{:?}", indent, self.transform_local);
 
-        println!("{}  World Transform:", indent);
+        println!("{}  Transform:", indent);
         // println!("{}{:?}", indent, self.transform_world);
-        println!("{}", self.transform_world);
+        println!("{}", self.transform_local * self.transform_world);
 
         for (index, child) in self.children.iter().enumerate() {
             println!("{}Child {}:", indent, index);
@@ -264,7 +270,81 @@ pub fn read_scene(filename: &str) -> Scene {
             };
             scene.add_material(m);
         });
-    
+
+
+    // === Parse nodes ===
+    fn visit(graph: &Value) -> Node {
+        let mut node = Node::new(None);
+
+        let mut t: Matrix4<f32> = Matrix4::identity();
+        if graph.get("transforms").is_some() {
+            graph["transforms"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .for_each(|trans| {
+                    let trans_type = trans["type"].as_str().unwrap();
+                    let trans_val =  trans["value"].as_array().unwrap();
+
+                    if trans_type == "translate" {
+                        t = translate(
+                            Vector3::new(
+                                trans_val[0].as_f64().unwrap() as f32,
+                                trans_val[1].as_f64().unwrap() as f32,
+                                trans_val[2].as_f64().unwrap() as f32
+                            ) 
+                        ) * t;
+                    }
+                    if trans_type == "rotate_x" {
+                        t = rotate_x( trans_val[0].as_f64().unwrap() as f32) * t;
+                    }
+                    if trans_type == "rotate_y" {
+                        t = rotate_y( trans_val[0].as_f64().unwrap() as f32) * t;
+                    }
+                    if trans_type == "rotate_z" {
+                        t = rotate_z( trans_val[0].as_f64().unwrap() as f32) * t;
+                    }
+                    if trans_type == "scale" {
+                        t = scale(
+                            Vector3::new(
+                                trans_val[0].as_f64().unwrap() as f32,
+                                trans_val[1].as_f64().unwrap() as f32,
+                                trans_val[2].as_f64().unwrap() as f32
+                            ) 
+                        ) * t;
+                    }
+                });
+                node.set_transform(t);
+        }
+
+        if graph.get("mesh_id").is_some() {
+            let mesh_id = graph["mesh_id"].as_str().unwrap();
+            node.set_mesh_id(mesh_id.to_string());
+        }
+
+        if graph.get("material_id").is_some() {
+            let material_id = graph["material_id"].as_u64().unwrap();
+            node.set_material_id(material_id as u32);
+        }
+
+
+        if graph.get("children").is_some() {
+            graph["children"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .for_each(|child| {
+                    let child_node = visit(child);
+                    node.add_child(child_node);
+                });
+        }
+
+        return node;
+    }
+
+    let root = visit( &json["root"] );
+    scene.set_root(root);
+
 
     return scene
 }

@@ -4,12 +4,16 @@
     {
       "position": [12.0, 12.0, 12.0],
       "intensity": [100.0, 100.0, 150.0]
+    },
+    {
+      "position": [-12.0, 12.0, 12.0],
+      "intensity": [100.0, 50.0, 50.0]
     }
   ],
   "materials": [
     {
       "albedo": [0.5, 0.5, 0.5],
-      "shine": 80.0
+      "shine": 180.0
     },
     {
       "albedo": [0.8, 0.1, 0.1],
@@ -19,5 +23,28 @@
       "albedo": [0.8, 0.8, 0.1],
       "shine": 20.0
     }
-  ]
+  ],
+  "root": {
+    "children": [
+      {
+        "mesh_id": "sphere",
+        "material_id": 0
+      },
+      {
+        "transforms": [
+          { "type": "translate", "value": [0, 0, -8] }
+        ],
+        "children": [
+          {
+            "mesh_id": "sphere",
+            "material_id": 1,
+            "transforms": [
+              { "type": "translate", "value": [5, 0, 0] },
+              { "type": "scale", "value": [1, 1, 1] }
+            ]
+          }
+        ]
+      }
+    ]
+  }
 }

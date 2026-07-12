@@ -197,43 +197,43 @@ fn main() {
 
     let mut scene = read_scene("scene01.json");
 
-    // Scene building
-    let mut root = Node::new(None);
+    // // Scene building
+    // let mut root = Node::new(None);
 
-    let mut child = Node::new(
-        Some("sphere".to_string()),
-    );
-    child.set_material_id(0);
+    // let mut child = Node::new(
+    //     Some("sphere".to_string()),
+    // );
+    // child.set_material_id(0);
 
-    let mut child2 = Node::new(
-        Some("sphere".to_string()),
-    );
-    child2.set_transform(
-        translate(Vector3::new(0.0, -3.0, -12.0)) * scale(Vector3::new(6.0, 6.0, 6.0))
-    );
-    child2.set_material_id(2);
-
-
-
-    let mut group = Node::new(
-        Some("group".to_string()),
-    );
-    let mut group_child = Node::new(
-        Some("sphere".to_string()),
-    );
-    group_child.set_material_id(1);
+    // let mut child2 = Node::new(
+    //     Some("sphere".to_string()),
+    // );
+    // child2.set_transform(
+    //     translate(Vector3::new(0.0, -3.0, -12.0)) * scale(Vector3::new(6.0, 6.0, 6.0))
+    // );
+    // child2.set_material_id(2);
 
 
-    group.set_transform(
-        translate(Vector3::new(3.0, 2.0, -5.0))
-    );
-    group.add_child(group_child);       
 
-    root.add_child(child);
-    root.add_child(child2);
-    root.add_child(group);
+    // let mut group = Node::new(
+    //     Some("group".to_string()),
+    // );
+    // let mut group_child = Node::new(
+    //     Some("sphere".to_string()),
+    // );
+    // group_child.set_material_id(1);
 
-    scene.set_root(root);
+
+    // group.set_transform(
+    //     translate(Vector3::new(3.0, 2.0, -5.0))
+    // );
+    // group.add_child(group_child);       
+
+    // root.add_child(child);
+    // root.add_child(child2);
+    // root.add_child(group);
+
+    // scene.set_root(root);
 
     scene.print_tree();
 
