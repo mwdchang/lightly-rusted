@@ -1,4 +1,4 @@
-use nalgebra::{Matrix4};
+use nalgebra::{Matrix4, Vector3};
 
 /**
  * Scene graph structure
@@ -11,9 +11,17 @@ pub struct Node {
     children: Vec<Node>
 }
 
+
+pub struct PointLight {
+    pub position: Vector3<f32>,
+    pub intensity: Vector3<f32>,
+}
+
+
 pub struct Scene {
     description: String,
-    root: Node
+    root: Node,
+    point_lights: Vec<PointLight>
 }
 
 impl Node {
@@ -48,9 +56,13 @@ impl Node {
     }
 
 
-
     pub fn add_child(&mut self, child: Node) {
         self.children.push(child);
+        if !self.children.is_empty() {
+            for child in &mut self.children {
+                child.set_world_transform(self.transform_local * self.transform_world);
+            }
+        }
     }
 
     pub fn set_transform(&mut self, transform: Matrix4<f32>) {
@@ -70,14 +82,38 @@ impl Node {
             }
         }
     }
-}
 
+    fn print_tree_recursive(&self, depth: usize) {
+        let indent = "  ".repeat(depth);
+
+        println!("{}Node:", indent);
+
+        if let Some(mesh_id) = &self.mesh_id {
+            println!("{}  Mesh: {}", indent, mesh_id);
+        } else {
+            println!("{}  Mesh: None", indent);
+        }
+
+        // println!("{}  Local Transform:", indent);
+        // println!("{}{:?}", indent, self.transform_local);
+
+        println!("{}  World Transform:", indent);
+        // println!("{}{:?}", indent, self.transform_world);
+        println!("{}", self.transform_world);
+
+        for (index, child) in self.children.iter().enumerate() {
+            println!("{}Child {}:", indent, index);
+            child.print_tree_recursive(depth + 1);
+        }
+    }
+}
 
 impl Scene {
     pub fn new(desc: String, root: Node) -> Self {
         Self {
             description: desc,
-            root
+            root,
+            point_lights: vec![]
         }
     }
 
@@ -87,5 +123,18 @@ impl Scene {
 
     pub fn get_root_mut(&mut self) -> &mut Node {
         &mut self.root
+    }
+
+    pub fn add_point_light(&mut self, pl: PointLight) {
+        self.point_lights.push(pl);
+    }
+
+    pub fn get_point_lights(&self) -> &Vec<PointLight> {
+        &self.point_lights
+    }
+    
+    pub fn print_tree(&self) {
+        println!("Scene: {}", self.description);
+        self.root.print_tree_recursive(0);
     }
 }
