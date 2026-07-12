@@ -102,9 +102,44 @@ fn intersect(
     }
 
     // TODO: Need to sort hits/depth-buffers
-    // TODO: All light sources
     // TODO: check shine material
-    
+    let mut contribution: Vector3<f32> = Vector3::zeros();
+    let mut specular: Vector3<f32> = Vector3::zeros();
+    let ambient :Vector3<f32> = Vector3::new(0.05, 0.05, 0.05);
+
+    for light in scene.get_point_lights() {
+        let hit = hits.get(0).unwrap();
+        let material = scene.get_materials().get(hit.material_id as usize).unwrap();
+
+        let to_light = light.position - hit.point;
+        let distance = to_light.norm();
+        let light_dir = to_light / distance;
+
+        // Used to be 1.0, just making things look nice
+        let attenuation = 2.5 / (distance * distance);
+        let ndotl = hit.normal.dot(&light_dir).max(0.0);
+
+        contribution +=
+            material.albedo.component_mul(
+                &light.intensity
+            )   
+            * attenuation
+            * ndotl;
+
+        let view_dir = (camera.get_position() - hit.point).normalize();
+        let halfway = (light_dir + view_dir).normalize();
+        let spec = hit.normal
+            .dot(&halfway)
+            .max(0.0)
+            .powf(material.shine);
+
+        specular += 
+            light.intensity * spec;
+    }
+    return contribution + specular + ambient;
+
+
+    /*
     let light = scene.get_point_lights().get(0).unwrap();
     let hit = hits.get(0).unwrap();
 
@@ -144,6 +179,7 @@ fn intersect(
     let specular = light.intensity * spec;
 
     return contribution + specular;
+    */
 }
 
 fn render(
