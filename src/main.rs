@@ -38,6 +38,11 @@ end, { desc = "Format file" })
 **/
 
 
+/** 
+* typical:
+* world_transform = translation * rotation * scale
+**/
+
 // Placeholder for real geometry intersection.
 // Later this will contain sphere/triangle tests.
 fn intersect(
@@ -76,14 +81,44 @@ fn intersect(
         if node.get_mesh_id().as_deref() == Some("sphere") {
             if let Some(t) = intersect_unit_sphere(n_ray.origin, n_ray.direction) {
                 let hit_point = n_ray.origin + n_ray.direction * t;
+                let hit_normal = hit_point.normalize();
+
+                ///let w_point4 = node.get_transform_inverse()
+                ///    * hit_point.push(1.0);
+                ///
+                let w_point4 = node.get_transform_local() 
+                    * node.get_transform_world()
+                    * hit_point.push(1.0);
+                let w_point = Vector3::new(
+                    w_point4.x, w_point4.y, w_point4.z
+                );
+
+                // println!("{} ==> {}", hit_point.z, w_point.z);
+
+                let w_normal4 =
+                    (node.get_transform_inverse().transpose() * hit_normal.push(1.0)).normalize();                
+                let w_normal = Vector3::new(
+                    w_normal4.x, w_normal4.y, w_normal4.z
+                );
+                let w_t = (w_point - ray.origin).norm();
+
+
+                // hits.push( HitRecord {
+                //     t,
+                //     point: hit_point,
+                //     normal: hit_point.normalize(),
+                //     material_id: node.get_material_id(),
+                //     front_face: true
+                // })
+                
                 hits.push( HitRecord {
-                    t,
-                    point: hit_point,
-                    // normal: Vector3::new(0.0, 0.0, 0.0),
-                    normal: hit_point.normalize(),
+                    t: w_t,
+                    point: w_point,
+                    normal: w_normal,
                     material_id: node.get_material_id(),
                     front_face: true
                 })
+
             }
         }
 
@@ -105,10 +140,17 @@ fn intersect(
     // TODO: check shine material
     let mut contribution: Vector3<f32> = Vector3::zeros();
     let mut specular: Vector3<f32> = Vector3::zeros();
-    let ambient :Vector3<f32> = Vector3::new(0.05, 0.05, 0.05);
+    let ambient :Vector3<f32> = Vector3::new(0.1, 0.1, 0.1);
+
+    let hit = hits
+        .iter()
+        .filter(|h| h.t > 0.001)
+        .min_by(|a, b| a.t.partial_cmp(&b.t).unwrap())
+        .unwrap();
+
 
     for light in scene.get_point_lights() {
-        let hit = hits.get(0).unwrap();
+        // let hit = hits.get(0).unwrap();
         let material = scene.get_materials().get(hit.material_id as usize).unwrap();
 
         let to_light = light.position - hit.point;
@@ -128,13 +170,20 @@ fn intersect(
 
         let view_dir = (camera.get_position() - hit.point).normalize();
         let halfway = (light_dir + view_dir).normalize();
-        let spec = hit.normal
+        let mut spec = hit.normal
             .dot(&halfway)
             .max(0.0)
             .powf(material.shine);
 
+        
+        if ndotl <= 0.0 {
+            spec = 0.0
+        }
+
         specular += 
-            light.intensity * spec;
+            light.intensity 
+            * spec
+            * material.specular;
     }
     return contribution + specular + ambient;
 
@@ -232,45 +281,6 @@ fn main() {
     );
 
     let mut scene = read_scene("scene01.json");
-
-    // // Scene building
-    // let mut root = Node::new(None);
-
-    // let mut child = Node::new(
-    //     Some("sphere".to_string()),
-    // );
-    // child.set_material_id(0);
-
-    // let mut child2 = Node::new(
-    //     Some("sphere".to_string()),
-    // );
-    // child2.set_transform(
-    //     translate(Vector3::new(0.0, -3.0, -12.0)) * scale(Vector3::new(6.0, 6.0, 6.0))
-    // );
-    // child2.set_material_id(2);
-
-
-
-    // let mut group = Node::new(
-    //     Some("group".to_string()),
-    // );
-    // let mut group_child = Node::new(
-    //     Some("sphere".to_string()),
-    // );
-    // group_child.set_material_id(1);
-
-
-    // group.set_transform(
-    //     translate(Vector3::new(3.0, 2.0, -5.0))
-    // );
-    // group.add_child(group_child);       
-
-    // root.add_child(child);
-    // root.add_child(child2);
-    // root.add_child(group);
-
-    // scene.set_root(root);
-
     scene.print_tree();
 
     let image = render(width, height, &camera, &scene);

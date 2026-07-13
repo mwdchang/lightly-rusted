@@ -19,6 +19,7 @@ pub struct PointLight {
 pub struct Material {
     pub albedo: Vector3<f32>, // basically diffuse
     pub shine: f32,
+    pub specular: f32
 }
 
 
@@ -259,6 +260,7 @@ pub fn read_scene(filename: &str) -> Scene {
         .for_each(|material| {
             let vals = material["albedo"].as_array().unwrap();
             let shine = material["shine"].as_f64().unwrap() as f32;
+            let specular = material["specular"].as_f64().unwrap() as f32;
 
             let m = Material {
                 albedo: Vector3::new(
@@ -266,7 +268,8 @@ pub fn read_scene(filename: &str) -> Scene {
                     vals[1].as_f64().unwrap() as f32,
                     vals[2].as_f64().unwrap() as f32,
                 ),
-                shine
+                shine,
+                specular
             };
             scene.add_material(m);
         });
