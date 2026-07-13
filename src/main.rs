@@ -15,16 +15,9 @@ use collisions::intersect_unit_sphere;
 use collisions::HitRecord;
 
 mod utils;
-use utils::translate;
-
 use std::process;
 
-use crate::models::PointLight;
-use crate::models::Material;
 use crate::models::read_scene;
-use crate::utils::scale;
-
-use std::collections::HashMap;
 
 
 
@@ -79,27 +72,20 @@ fn intersect(
         };
 
         if node.get_mesh_id().as_deref() == Some("sphere") {
-            if let Some(t) = intersect_unit_sphere(n_ray.origin, n_ray.direction) {
-                let hit_point = n_ray.origin + n_ray.direction * t;
-                let hit_normal = hit_point.normalize();
-
-                ///let w_point4 = node.get_transform_inverse()
-                ///    * hit_point.push(1.0);
-                ///
-                let w_point4 = node.get_transform_local() 
+            if let Some(res) = intersect_unit_sphere(n_ray.origin, n_ray.direction) {
+                let w_point = (
+                    node.get_transform_local() 
                     * node.get_transform_world()
-                    * hit_point.push(1.0);
-                let w_point = Vector3::new(
-                    w_point4.x, w_point4.y, w_point4.z
-                );
+                    * res.hit_point.push(1.0)
+                ).xyz();
 
                 // println!("{} ==> {}", hit_point.z, w_point.z);
 
-                let w_normal4 =
-                    (node.get_transform_inverse().transpose() * hit_normal.push(1.0)).normalize();                
-                let w_normal = Vector3::new(
-                    w_normal4.x, w_normal4.y, w_normal4.z
-                );
+                let w_normal = (
+                    node.get_transform_inverse().transpose() * 
+                    res.normal.push(0.0)
+                ).xyz().normalize();                
+
                 let w_t = (w_point - ray.origin).norm();
 
 
@@ -136,12 +122,9 @@ fn intersect(
         return Vector3::new(0.0, 0.0, 0.0)
     }
 
-    // TODO: Need to sort hits/depth-buffers
-    // TODO: check shine material
     let mut contribution: Vector3<f32> = Vector3::zeros();
     let mut specular: Vector3<f32> = Vector3::zeros();
     let ambient :Vector3<f32> = Vector3::new(0.1, 0.1, 0.1);
-
     let hit = hits
         .iter()
         .filter(|h| h.t > 0.001)
@@ -150,7 +133,6 @@ fn intersect(
 
 
     for light in scene.get_point_lights() {
-        // let hit = hits.get(0).unwrap();
         let material = scene.get_materials().get(hit.material_id as usize).unwrap();
 
         let to_light = light.position - hit.point;
@@ -186,49 +168,6 @@ fn intersect(
             * material.specular;
     }
     return contribution + specular + ambient;
-
-
-    /*
-    let light = scene.get_point_lights().get(0).unwrap();
-    let hit = hits.get(0).unwrap();
-
-    let to_light = light.position - hit.point;
-    let distance = to_light.norm();
-    let light_dir = to_light / distance;
-
-    // let attenuation = 1.0 / (distance * distance);
-    let attenuation = 2.5 / (distance * distance);
-
-    let ndotl = hit.normal.dot(&light_dir).max(1.0);
-
-    let material = scene.get_materials().get(hit.material_id as usize).unwrap();
-
-    let contribution =
-        material.albedo.component_mul(
-            &light.intensity
-        )   
-        * attenuation
-        * ndotl;
-    
-    /*
-    let shine:f32 = 300.0;
-    let view_dir = (camera.get_position() - hit.unwrap().point).normalize();
-    let reflect_dir = -light_dir - 2.0 * (-light_dir).dot(&hit.unwrap().normal) * hit.unwrap().normal;
-    let reflect_dir = reflect_dir.normalize();
-    let spec = view_dir.dot(&reflect_dir).max(0.0).powf(shine);
-    let specular = light.unwrap().intensity * spec;
-    */
-    
-    let view_dir = (camera.get_position() - hit.point).normalize();
-    let halfway = (light_dir + view_dir).normalize();
-    let spec = hit.normal
-        .dot(&halfway)
-        .max(0.0)
-        .powf(material.shine);
-    let specular = light.intensity * spec;
-
-    return contribution + specular;
-    */
 }
 
 fn render(
@@ -241,7 +180,6 @@ fn render(
     for y in 0..height {
         for x in 0..width {
             let ray = camera.generate_ray(x, y, width, height);
-
             let color = intersect(&camera, &ray, &scene);
 
             image.put_pixel(
@@ -280,7 +218,7 @@ fn main() {
         height,
     );
 
-    let mut scene = read_scene("scene01.json");
+    let scene = read_scene("scene01.json");
     scene.print_tree();
 
     let image = render(width, height, &camera, &scene);

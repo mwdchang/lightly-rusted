@@ -8,6 +8,14 @@ pub struct HitRecord {
     pub front_face: bool,
 }
 
+
+pub struct IntersectResult {
+    pub t: f32,
+    pub hit_point: Vector3<f32>,
+    pub normal: Vector3<f32>,
+    pub front_face: bool,
+}
+
 /**
  * Checks sphere collision at (0, 0, 0)
  *
@@ -17,7 +25,7 @@ pub struct HitRecord {
 pub fn intersect_unit_sphere(
     origin: Vector3<f32>,
     dir: Vector3<f32>,
-) -> Option<f32> {
+) -> Option<IntersectResult> {
     let a = dir.dot(&dir);
     let b = 2.0 * origin.dot(&dir);
     let c = origin.dot(&origin) - 1.0;
@@ -34,9 +42,23 @@ pub fn intersect_unit_sphere(
     let t1 = (-b + sqrt_disc) / (2.0 * a);
 
     if t0 > 0.0 {
-        Some(t0)
+        let hitpoint = origin + dir * t0;
+        let normal = hitpoint.normalize();
+        return Some(IntersectResult {
+            t: t0,
+            hit_point: hitpoint,
+            normal: normal,
+            front_face: dir.dot(&normal) < 0.0,
+        });
     } else if t1 > 0.0 {
-        Some(t1)
+        let hitpoint = origin + dir * t1;
+        let normal = hitpoint.normalize();
+        return Some(IntersectResult {
+            t: t1,
+            hit_point: hitpoint,
+            normal: normal,
+            front_face: dir.dot(&normal) < 0.0,
+        });
     } else {
         None
     }
