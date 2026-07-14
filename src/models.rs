@@ -225,7 +225,7 @@ pub fn read_scene(filename: &str) -> Scene {
     let mut scene = Scene::new(description.to_string(), root);
 
 
-    println!("Scene json\n {:#?}", json);
+    // println!("Scene json\n {:#?}", json);
 
     // === Parse lights ===
     json["point_lights"]

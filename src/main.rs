@@ -9,6 +9,7 @@ use camera::Ray;
 mod models;
 use models::Scene;
 use models::Node;
+use models::read_scene;
 
 mod collisions;
 use collisions::intersect_unit_sphere;
@@ -17,9 +18,9 @@ use collisions::HitRecord;
 mod utils;
 use std::process;
 
-use crate::models::read_scene;
 
-
+mod argparser;
+use argparser::Args;
 
 
 
@@ -46,30 +47,35 @@ fn intersect(
 
     fn visit(node: &Node, ray: &Ray, hits: &mut Vec<HitRecord>) {
         // println!("{:?}", node.get_transform_world());
-        // let inv = (
-        //     node.get_transform_local() * 
-        //     node.get_transform_world()
-        // ).try_inverse().unwrap();
         
         // Transform ray to local coordinate space
         let inv = node.get_transform_inverse();
-        let new_direction = inv.transform_vector(&ray.direction);
-        let p = Point3::new(
-            ray.origin[0],
-            ray.origin[1],
-            ray.origin[2]
-        );
-        let new_origin = inv.transform_point(&p);
-        let new_origin_vec = Vector3::new(
-            new_origin[0],
-            new_origin[1],
-            new_origin[2]
-        );
 
         let n_ray = Ray {
-            direction: new_direction,
-            origin: new_origin_vec         
+            direction: inv.transform_vector(&ray.direction),
+            origin: inv
+                .transform_point(&Point3::from(ray.origin))
+                .coords,
         };
+
+
+        // let new_direction = inv.transform_vector(&ray.direction);
+        // let p = Point3::new(
+        //     ray.origin[0],
+        //     ray.origin[1],
+        //     ray.origin[2]
+        // );
+        // let new_origin = inv.transform_point(&p);
+        // let new_origin_vec = Vector3::new(
+        //     new_origin[0],
+        //     new_origin[1],
+        //     new_origin[2]
+        // );
+
+        // let n_ray = Ray {
+        //     direction: new_direction,
+        //     origin: new_origin_vec         
+        // };
 
         if node.get_mesh_id().as_deref() == Some("sphere") {
             if let Some(res) = intersect_unit_sphere(n_ray.origin, n_ray.direction) {
@@ -196,10 +202,9 @@ fn render(
     return image
 }
 
+
 fn main() {
-    // Image parameters
-    let width = 400;
-    let height = 300;
+    let args = Args::parse();
 
     // process::exit(1);
 
@@ -214,14 +219,14 @@ fn main() {
         camera_target,
         Vector3::y(),
         60.0,
-        width,
-        height,
+        args.width,
+        args.height,
     );
 
-    let scene = read_scene("scene01.json");
-    scene.print_tree();
+    let scene = read_scene(&args.scene_file);
+    // scene.print_tree();
 
-    let image = render(width, height, &camera, &scene);
+    let image = render(args.width, args.height, &camera, &scene);
     image.save("render-result.png").expect("Failed to save PNG");
-    println!("Rendered {}x{} image", width, height);
+    println!("Rendered {}x{} image", args.width, args.height);
 }

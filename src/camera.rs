@@ -1,4 +1,5 @@
 use nalgebra::Vector3;
+use nalgebra::Point3;
 
 
 pub struct Ray {

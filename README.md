@@ -6,8 +6,19 @@ lightly-rusted is written in Rust as demo project for me to learn the language. 
 
 ## Running 
 This will create a `render-result.png`.
+
 ```
+# Use all defaults (scene01.json)
 cargo run
+
+# Custom scene only
+cargo run -- --scene scene02.json
+
+# Custom size only
+cargo run -- --size 1920x1080
+
+# Both
+cargo run -- --scene scene02.json --size 800x600
 ```
 
 
