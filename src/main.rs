@@ -176,6 +176,19 @@ fn intersect(
 
 
     for light in scene.get_point_lights() {
+        // Cast shadow ray to check if the light has any contributions
+        let shadow_ray = Ray {
+            direction: hit.normal,
+            origin: hit.point + hit.normal * 0.0001
+        };
+        let mut shadow_hits:Vec<HitRecord> = vec![];
+        visit(scene.get_root(), &shadow_ray, &mut shadow_hits);
+        if !shadow_hits.is_empty() {
+            continue
+        }
+
+
+        // Light can reach, get material and compute diffuce and specular
         let material = scene.get_materials().get(hit.material_id as usize).unwrap();
 
         let to_light = light.position - hit.point;
