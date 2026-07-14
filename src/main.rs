@@ -13,6 +13,7 @@ use models::read_scene;
 
 mod collisions;
 use collisions::intersect_unit_sphere;
+use collisions::intersect_unit_cone;
 use collisions::HitRecord;
 
 mod utils;
@@ -77,6 +78,41 @@ fn intersect(
         //     origin: new_origin_vec         
         // };
 
+        let mesh_id = node.get_mesh_id().as_deref();
+
+        let res = if mesh_id == Some("sphere") {
+            intersect_unit_sphere(n_ray.origin, n_ray.direction)
+        } else if mesh_id == Some("cone") {
+            intersect_unit_cone(n_ray.origin, n_ray.direction)
+        } else {
+            None
+        };
+
+        if res.is_some() {
+            let r = res.unwrap();
+            let w_point = (
+                node.get_transform_local() 
+                * node.get_transform_world()
+                * r.hit_point.push(1.0)
+            ).xyz();
+
+            let w_normal = (
+                node.get_transform_inverse().transpose() * 
+                r.normal.push(0.0)
+            ).xyz().normalize();                
+
+            let w_t = (w_point - ray.origin).norm();
+
+            hits.push( HitRecord {
+                t: w_t,
+                point: w_point,
+                normal: w_normal,
+                material_id: node.get_material_id(),
+                front_face: true
+            })
+        }
+
+        /*
         if node.get_mesh_id().as_deref() == Some("sphere") {
             if let Some(res) = intersect_unit_sphere(n_ray.origin, n_ray.direction) {
                 let w_point = (
@@ -113,6 +149,7 @@ fn intersect(
 
             }
         }
+        */
 
         // Recurse
         for child in node.get_children() {
@@ -224,7 +261,7 @@ fn main() {
     );
 
     let scene = read_scene(&args.scene_file);
-    // scene.print_tree();
+    scene.print_tree();
 
     let image = render(args.width, args.height, &camera, &scene);
     image.save("render-result.png").expect("Failed to save PNG");

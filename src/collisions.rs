@@ -66,68 +66,102 @@ pub fn intersect_unit_sphere(
 
 
 
+/**
+ * Cone intersection, generated
+**/
 pub fn intersect_unit_cone(
     origin: Vector3<f32>,
     dir: Vector3<f32>,
-) -> Option<f32> {
-    let mut hits = Vec::with_capacity(3);
+) -> Option<IntersectResult> {
+    let mut closest: Option<IntersectResult> = None;
 
-    let eps = 1e-4;
+    // ---- Cone side ----
+    //
+    // y^2 + z^2 = x^2
+    //
+    let a = dir.y * dir.y + dir.z * dir.z - dir.x * dir.x;
+    let b = 2.0 * (origin.y * dir.y + origin.z * dir.z - origin.x * dir.x);
+    let c = origin.y * origin.y + origin.z * origin.z - origin.x * origin.x;
 
-    // --- Cone side ---
-    let a = dir.x * dir.x
-          + dir.z * dir.z
-          - dir.y * dir.y;
+    let disc = b * b - 4.0 * a * c;
 
-    let b = 2.0 * (
-        origin.x * dir.x +
-        origin.z * dir.z -
-        origin.y * dir.y
-    );
+    if disc >= 0.0 && a.abs() > 1e-6 {
+        let sqrt_disc = disc.sqrt();
 
-    let c = origin.x * origin.x
-          + origin.z * origin.z
-          - origin.y * origin.y;
+        let t0 = (-b - sqrt_disc) / (2.0 * a);
+        let t1 = (-b + sqrt_disc) / (2.0 * a);
 
-    if a.abs() > eps {
-        let disc = b * b - 4.0 * a * c;
+        for t in [t0, t1] {
+            if t <= 0.0 {
+                continue;
+            }
 
-        if disc >= 0.0 {
-            let sqrt_disc = disc.sqrt();
+            let hit = origin + dir * t;
 
-            hits.push((-b - sqrt_disc) / (2.0 * a));
-            hits.push((-b + sqrt_disc) / (2.0 * a));
-        }
-    }
+            // finite cone bounds
+            if hit.x < -1.0 || hit.x > 0.0 {
+                continue;
+            }
 
-    // Keep only points on finite cone side
-    hits.retain(|t| {
-        if *t <= eps {
-            return false;
-        }
+            // Gradient of x^2 - y^2 - z^2
+            let mut normal = Vector3::new(
+                -2.0 * hit.x,
+                2.0 * hit.y,
+                2.0 * hit.z,
+            )
+            .normalize();
 
-        let p = origin + dir * *t;
+            let front_face = dir.dot(&normal) < 0.0;
 
-        p.y >= 0.0 &&
-        p.y <= 1.0 &&
-        p.x * p.x + p.z * p.z <= p.y * p.y + eps
-    });
+            if !front_face {
+                normal = -normal;
+            }
 
+            let result = IntersectResult {
+                t,
+                hit_point: hit,
+                normal,
+                front_face,
+            };
 
-    // --- Base cap at y = 1 ---
-    if dir.y.abs() > eps {
-        let t = (1.0 - origin.y) / dir.y;
-
-        if t > eps {
-            let p = origin + dir * t;
-
-            if p.x * p.x + p.z * p.z <= 1.0 {
-                hits.push(t);
+            if closest.is_none() || t < closest.as_ref().unwrap().t {
+                closest = Some(result);
             }
         }
     }
 
-    // Closest hit wins
-    hits.into_iter()
-        .min_by(|a, b| a.partial_cmp(b).unwrap())
+    // ---- Base disk ----
+    //
+    // Plane: x = -1
+    //
+    if dir.x.abs() > 1e-6 {
+        let t = (-1.0 - origin.x) / dir.x;
+
+        if t > 0.0 {
+            let hit = origin + dir * t;
+
+            // Disk radius is 1
+            if hit.y * hit.y + hit.z * hit.z <= 1.0 {
+                let mut normal = Vector3::new(-1.0, 0.0, 0.0);
+
+                let front_face = dir.dot(&normal) < 0.0;
+
+                if !front_face {
+                    normal = -normal;
+                }
+
+                let result = IntersectResult {
+                    t,
+                    hit_point: hit,
+                    normal,
+                    front_face,
+                };
+
+                if closest.is_none() || t < closest.as_ref().unwrap().t {
+                    closest = Some(result);
+                }
+            }
+        }
+    }
+    closest
 }
