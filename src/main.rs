@@ -109,7 +109,6 @@ fn intersect(
 
     let mut contribution: Vector3<f32> = Vector3::zeros();
     let mut specular: Vector3<f32> = Vector3::zeros();
-    let ambient :Vector3<f32> = Vector3::new(0.1, 0.1, 0.1);
     let hit = hits
         .iter()
         .filter(|h| h.t > 0.001)

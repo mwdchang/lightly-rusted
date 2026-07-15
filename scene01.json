@@ -3,7 +3,7 @@
   "environment": {
     "background": [0, 0.0, 0],
     "ambient_light": [0.2, 0.2, 0.2],
-    "camera_position": [0, 0, 6],
+    "camera_position": [0, 0, 10],
     "camera_target": [0, 0, 0]
 
   },
@@ -47,10 +47,8 @@
     "children": [
       {
         "transforms": [
-          { "type": "scale", "value": [6, 5, 5] },
-          { "type": "rotate_y", "value": [-0.4] },
-          { "type": "rotate_z", "value": [0.9] },
-          { "type": "translate", "value": [-3, 1, -15] }
+          { "type": "scale", "value": [50.0, 0.05, 50.0] },
+          { "type": "translate", "value": [0, -5, 0] }
         ],
         "children": [
           {
@@ -72,21 +70,10 @@
       },
       {
         "transforms": [
-          { "type": "scale", "value": [12, 12, 12] },
-          { "type": "translate", "value": [0, -15, 0] }
-        ],
-        "children": [
-          {
-            "mesh_id": "sphere",
-            "material_id": 2
-          }
-        ]
-      },
-      {
-        "transforms": [
-          { "type": "scale", "value": [3, 3, 3] },
-          { "type": "rotate_z", "value": [1.1] },
-          { "type": "translate", "value": [8, 5, -10] }
+          { "type": "scale", "value": [2, 5, 2] },
+          { "type": "rotate_x", "value": [0.8] },
+          { "type": "rotate_z", "value": [-0.6] },
+          { "type": "translate", "value": [8, 1, -8] }
         ],
         "children": [
           {

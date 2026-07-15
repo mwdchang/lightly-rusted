@@ -1,10 +1,8 @@
-use nalgebra::zero;
 use nalgebra::{Matrix4, Vector3};
 
 // JSON parse
 use serde_json::Value;
 use std::fs::File;
-use std::mem::zeroed;
 
 use crate::utils::translate;
 use crate::utils::rotate_x;
@@ -81,9 +79,6 @@ impl Node {
     pub fn get_material_id(&self) -> u32 {
         self.material_id
     }
-
-
-
 
 
     pub fn get_transform_local(&self) -> Matrix4<f32> {
@@ -246,13 +241,11 @@ pub fn read_scene(filename: &str) -> Scene {
     let json: Value = serde_json::from_reader(file).unwrap();
     let description = json["description"].as_str().unwrap();
 
-    let mut root = Node::new(None);
+    let root = Node::new(None);
     let mut scene = Scene::new(description.to_string(), root);
 
 
     // println!("Scene json\n {:#?}", json);
-
-
     let env = json.get("environment").unwrap();
     let background = env["background"].as_array().unwrap();
     let ambient_light = env["ambient_light"].as_array().unwrap();

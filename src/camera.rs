@@ -1,12 +1,9 @@
 use nalgebra::Vector3;
-use nalgebra::Point3;
-
 
 pub struct Ray {
     pub origin: Vector3<f32>,
     pub direction: Vector3<f32>,
 }
-
 
 pub struct Camera {
     position: Vector3<f32>,
@@ -19,7 +16,6 @@ pub struct Camera {
     fov_y: f32,
     aspect_ratio: f32,
 }
-
 
 impl Camera {
     pub fn look_at(
