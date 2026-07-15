@@ -1,9 +1,24 @@
 {
   "description": "Scene 01",
+  "environment": {
+    "background": [0, 0.0, 0],
+    "ambient_light": [0.2, 0.2, 0.2],
+    "camera_position": [0, 0, 6],
+    "camera_target": [0, 0, 0]
+
+  },
   "point_lights": [
     {
-      "position": [8, 11, 8],
+      "position": [0, 15, 0],
       "intensity": [500.0, 500.0, 500.0]
+    },
+    {
+      "position": [15, 0, 0],
+      "intensity": [200.0, 200.0, 200.0]
+    },
+    {
+      "position": [-15, 0, 0],
+      "intensity": [200.0, 200.0, 200.0]
     }
   ],
   "materials": [
@@ -39,7 +54,7 @@
         ],
         "children": [
           {
-            "mesh_id": "cone",
+            "mesh_id": "cube",
             "material_id": 0
           }
         ]
@@ -69,12 +84,13 @@
       },
       {
         "transforms": [
-          { "type": "scale", "value": [2, 2, 2] },
-          { "type": "translate", "value": [5, 5, -10] }
+          { "type": "scale", "value": [3, 3, 3] },
+          { "type": "rotate_z", "value": [1.1] },
+          { "type": "translate", "value": [8, 5, -10] }
         ],
         "children": [
           {
-            "mesh_id": "sphere",
+            "mesh_id": "cone",
             "material_id": 3
           }
         ]

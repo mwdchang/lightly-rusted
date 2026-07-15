@@ -1,0 +1,248 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/scene.schema.json",
+  "title": "Ray Tracer Scene",
+  "type": "object",
+
+  "properties": {
+    "description": {
+      "type": "string"
+    },
+
+    "environment": {
+      "$ref": "#/$defs/environment"
+    },
+
+    "point_lights": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pointLight"
+      }
+    },
+
+    "materials": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/material"
+      }
+    },
+
+    "root": {
+      "$ref": "#/$defs/node"
+    }
+  },
+
+  "required": [
+    "environment",
+    "point_lights",
+    "materials",
+    "root"
+  ],
+
+  "$defs": {
+    "vec3": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+
+    "scalar": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 1,
+      "maxItems": 1
+    },
+
+    "environment": {
+      "type": "object",
+      "properties": {
+        "background": {
+          "$ref": "#/$defs/vec3"
+        },
+        "ambient_light": {
+          "$ref": "#/$defs/vec3"
+        },
+        "camera_position": {
+          "$ref": "#/$defs/vec3"
+        },
+        "camera_target": {
+          "$ref": "#/$defs/vec3"
+        }
+      },
+      "required": [
+        "background",
+        "ambient_light",
+        "camera_position",
+        "camera_target"
+      ]
+    },
+
+    "pointLight": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "$ref": "#/$defs/vec3"
+        },
+        "intensity": {
+          "$ref": "#/$defs/vec3"
+        }
+      },
+      "required": [
+        "position",
+        "intensity"
+      ]
+    },
+
+    "material": {
+      "type": "object",
+      "properties": {
+        "albedo": {
+          "$ref": "#/$defs/vec3"
+        },
+        "shine": {
+          "type": "number"
+        },
+        "specular": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "albedo",
+        "shine",
+        "specular"
+      ]
+    },
+
+    "scaleTransform": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "scale"
+        },
+        "value": {
+          "$ref": "#/$defs/vec3"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+
+    "translateTransform": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "translate"
+        },
+        "value": {
+          "$ref": "#/$defs/vec3"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+
+    "rotateXTransform": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "rotate_x"
+        },
+        "value": {
+          "$ref": "#/$defs/scalar"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+
+    "rotateYTransform": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "rotate_y"
+        },
+        "value": {
+          "$ref": "#/$defs/scalar"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+
+    "rotateZTransform": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "rotate_z"
+        },
+        "value": {
+          "$ref": "#/$defs/scalar"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+
+    "transform": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/scaleTransform"
+        },
+        {
+          "$ref": "#/$defs/translateTransform"
+        },
+        {
+          "$ref": "#/$defs/rotateXTransform"
+        },
+        {
+          "$ref": "#/$defs/rotateYTransform"
+        },
+        {
+          "$ref": "#/$defs/rotateZTransform"
+        }
+      ]
+    },
+
+    "node": {
+      "type": "object",
+      "properties": {
+        "transforms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/transform"
+          }
+        },
+
+        "mesh_id": {
+          "type": "string"
+        },
+
+        "material_id": {
+          "type": "number"
+        },
+
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      }
+    }
+  }
+}

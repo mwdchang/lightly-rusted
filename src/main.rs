@@ -14,16 +14,13 @@ use models::read_scene;
 mod collisions;
 use collisions::intersect_unit_sphere;
 use collisions::intersect_unit_cone;
+use collisions::intersect_unit_cube;
 use collisions::HitRecord;
 
 mod utils;
-use std::process;
-
 
 mod argparser;
 use argparser::Args;
-
-
 
 
 /** format
@@ -60,30 +57,13 @@ fn intersect(
         };
 
 
-        // let new_direction = inv.transform_vector(&ray.direction);
-        // let p = Point3::new(
-        //     ray.origin[0],
-        //     ray.origin[1],
-        //     ray.origin[2]
-        // );
-        // let new_origin = inv.transform_point(&p);
-        // let new_origin_vec = Vector3::new(
-        //     new_origin[0],
-        //     new_origin[1],
-        //     new_origin[2]
-        // );
-
-        // let n_ray = Ray {
-        //     direction: new_direction,
-        //     origin: new_origin_vec         
-        // };
-
         let mesh_id = node.get_mesh_id().as_deref();
-
         let res = if mesh_id == Some("sphere") {
             intersect_unit_sphere(n_ray.origin, n_ray.direction)
         } else if mesh_id == Some("cone") {
             intersect_unit_cone(n_ray.origin, n_ray.direction)
+        } else if mesh_id == Some("cube") {
+            intersect_unit_cube(n_ray.origin, n_ray.direction)
         } else {
             None
         };
@@ -112,45 +92,6 @@ fn intersect(
             })
         }
 
-        /*
-        if node.get_mesh_id().as_deref() == Some("sphere") {
-            if let Some(res) = intersect_unit_sphere(n_ray.origin, n_ray.direction) {
-                let w_point = (
-                    node.get_transform_local() 
-                    * node.get_transform_world()
-                    * res.hit_point.push(1.0)
-                ).xyz();
-
-                // println!("{} ==> {}", hit_point.z, w_point.z);
-
-                let w_normal = (
-                    node.get_transform_inverse().transpose() * 
-                    res.normal.push(0.0)
-                ).xyz().normalize();                
-
-                let w_t = (w_point - ray.origin).norm();
-
-
-                // hits.push( HitRecord {
-                //     t,
-                //     point: hit_point,
-                //     normal: hit_point.normalize(),
-                //     material_id: node.get_material_id(),
-                //     front_face: true
-                // })
-                
-                hits.push( HitRecord {
-                    t: w_t,
-                    point: w_point,
-                    normal: w_normal,
-                    material_id: node.get_material_id(),
-                    front_face: true
-                })
-
-            }
-        }
-        */
-
         // Recurse
         for child in node.get_children() {
             visit(child, ray, hits);
@@ -162,7 +103,8 @@ fn intersect(
     visit(scene.get_root(), ray, &mut hits);
 
     if hits.is_empty() {
-        return Vector3::new(0.0, 0.0, 0.0)
+        // return Vector3::new(0.0, 0.0, 0.0)
+        return scene.environment.background;
     }
 
     let mut contribution: Vector3<f32> = Vector3::zeros();
@@ -223,7 +165,7 @@ fn intersect(
             * spec
             * material.specular;
     }
-    return contribution + specular + ambient;
+    return contribution + specular + scene.environment.ambient_light;
 }
 
 fn render(
@@ -256,13 +198,12 @@ fn render(
 fn main() {
     let args = Args::parse();
 
-    // process::exit(1);
+    let scene = read_scene(&args.scene_file);
+    scene.print_tree();
 
     // Camera parameters
-    // let camera_position = Vector3::new(0.0, 2.0, 5.0);
-    // let camera_target = Vector3::new(0.0, 0.0, 0.0);
-    let camera_position = Vector3::new(0.0, 0.0, 6.0);
-    let camera_target = Vector3::new(0.0, 0.0, 0.0);
+    let camera_position = scene.environment.camera_position;
+    let camera_target = scene.environment.camera_target;
 
     let camera = Camera::look_at(
         camera_position,
@@ -272,9 +213,6 @@ fn main() {
         args.width,
         args.height,
     );
-
-    let scene = read_scene(&args.scene_file);
-    scene.print_tree();
 
     let image = render(args.width, args.height, &camera, &scene);
     image.save("render-result.png").expect("Failed to save PNG");

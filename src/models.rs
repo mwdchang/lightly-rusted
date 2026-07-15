@@ -1,8 +1,10 @@
+use nalgebra::zero;
 use nalgebra::{Matrix4, Vector3};
 
 // JSON parse
 use serde_json::Value;
 use std::fs::File;
+use std::mem::zeroed;
 
 use crate::utils::translate;
 use crate::utils::rotate_x;
@@ -36,9 +38,17 @@ pub struct Node {
 }
 
 
+pub struct SceneEnvironment {
+    pub background: Vector3<f32>,
+    pub ambient_light: Vector3<f32>,
+    pub camera_position: Vector3<f32>,
+    pub camera_target: Vector3<f32>,
+}
+
 
 pub struct Scene {
     pub description: String,
+    pub environment: SceneEnvironment,
     root: Node,
     point_lights: Vec<PointLight>,
     materials: Vec<Material>
@@ -168,10 +178,25 @@ impl Scene {
         Self {
             description: desc,
             root,
+            environment: SceneEnvironment {
+                background: Vector3::zeros(),
+                ambient_light: Vector3::zeros(),
+                camera_position: Vector3::zeros(),
+                camera_target: Vector3::zeros()
+            },
             point_lights: vec![],
             materials: vec![]
         }
     }
+
+    pub fn get_environment(&self) -> &SceneEnvironment {
+        &self.environment
+    }
+
+    pub fn set_environment(&mut self, e: SceneEnvironment) {
+        self.environment = e;
+    }
+
 
     pub fn get_root(&self) -> &Node {
         &self.root
@@ -226,6 +251,38 @@ pub fn read_scene(filename: &str) -> Scene {
 
 
     // println!("Scene json\n {:#?}", json);
+
+
+    let env = json.get("environment").unwrap();
+    let background = env["background"].as_array().unwrap();
+    let ambient_light = env["ambient_light"].as_array().unwrap();
+    let camera_position = env["camera_position"].as_array().unwrap();
+    let camera_target = env["camera_target"].as_array().unwrap();
+
+    let scene_env = SceneEnvironment {
+        background: Vector3::new(
+            background[0].as_f64().unwrap() as f32,
+            background[1].as_f64().unwrap() as f32,
+            background[2].as_f64().unwrap() as f32
+        ),
+        ambient_light: Vector3::new(
+            ambient_light[0].as_f64().unwrap() as f32,
+            ambient_light[1].as_f64().unwrap() as f32,
+            ambient_light[2].as_f64().unwrap() as f32
+        ),
+        camera_position: Vector3::new(
+            camera_position[0].as_f64().unwrap() as f32,
+            camera_position[1].as_f64().unwrap() as f32,
+            camera_position[2].as_f64().unwrap() as f32
+        ),
+        camera_target: Vector3::new(
+            camera_target[0].as_f64().unwrap() as f32,
+            camera_target[1].as_f64().unwrap() as f32,
+            camera_target[2].as_f64().unwrap() as f32
+        ),
+    };
+    scene.set_environment(scene_env);
+
 
     // === Parse lights ===
     json["point_lights"]
@@ -347,7 +404,6 @@ pub fn read_scene(filename: &str) -> Scene {
 
     let root = visit( &json["root"] );
     scene.set_root(root);
-
 
     return scene
 }
