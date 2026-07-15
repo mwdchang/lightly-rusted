@@ -22,7 +22,6 @@ mod utils;
 mod argparser;
 use argparser::Args;
 
-
 /** format
 vim.keymap.set("n", "<leader>f", function()
     vim.lsp.buf.format()
@@ -40,7 +39,8 @@ end, { desc = "Format file" })
 fn intersect(
     camera: &Camera, 
     ray: &Ray, 
-    scene: &Scene
+    scene: &Scene,
+    depth: u8
 ) -> Vector3<f32> {
 
     fn visit(node: &Node, ray: &Ray, hits: &mut Vec<HitRecord>) {
@@ -112,8 +112,13 @@ fn intersect(
     let hit = hits
         .iter()
         .filter(|h| h.t > 0.001)
-        .min_by(|a, b| a.t.partial_cmp(&b.t).unwrap())
-        .unwrap();
+        .min_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
+
+    if hit.is_none() {
+        return scene.environment.background;
+    }
+
+    let hit = hit.unwrap();
 
 
     for light in scene.get_point_lights() {
@@ -164,7 +169,27 @@ fn intersect(
             * spec
             * material.specular;
     }
-    return contribution + specular + scene.environment.ambient_light;
+
+
+    // Check for reflections
+    let reflect_direction = (
+        ray.direction - 2.0 * ray.direction.dot(&hit.normal) * hit.normal
+    ).normalize();
+
+    let reflect_ray = Ray {
+        direction: reflect_direction,
+        origin: hit.point + 0.0001 * hit.normal
+    };
+
+    // println!("({}):{} ==>  {}", depth, ray.direction, reflect_ray.direction);
+    
+
+    let mut reflect_contribution: Vector3<f32> = Vector3::zeros();
+    if depth < 2 {
+        reflect_contribution = intersect(&camera, &reflect_ray, &scene, depth+1);
+    }
+
+    return contribution + specular + scene.environment.ambient_light + 0.25 * reflect_contribution;
 }
 
 fn render(
@@ -177,7 +202,7 @@ fn render(
     for y in 0..height {
         for x in 0..width {
             let ray = camera.generate_ray(x, y, width, height);
-            let color = intersect(&camera, &ray, &scene);
+            let color = intersect(&camera, &ray, &scene, 0);
 
             image.put_pixel(
                 x,
