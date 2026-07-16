@@ -4,6 +4,7 @@ use nalgebra::{Matrix4, Vector3};
 use serde_json::Value;
 use std::fs::File;
 
+use crate::obj::ModelCache;
 use crate::utils::translate;
 use crate::utils::rotate_x;
 use crate::utils::rotate_y;
@@ -51,7 +52,8 @@ pub struct Scene {
     pub environment: SceneEnvironment,
     root: Node,
     point_lights: Vec<PointLight>,
-    materials: Vec<Material>
+    materials: Vec<Material>,
+    pub model_cache: ModelCache
 }
 
 impl Node {
@@ -182,7 +184,8 @@ impl Scene {
                 camera_target: Vector3::zeros()
             },
             point_lights: vec![],
-            materials: vec![]
+            materials: vec![],
+            model_cache: ModelCache::new()
         }
     }
 

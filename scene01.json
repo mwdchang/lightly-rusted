@@ -79,12 +79,12 @@
       },
       {
         "transforms": [
-          { "type": "scale", "value": [2, 2, 2] },
+          { "type": "scale", "value": [1, 1, 1] },
           { "type": "translate", "value": [1, -1, 0] }
         ],
         "children": [
           {
-            "mesh_id": "sphere",
+            "mesh_id": "teapot",
             "material_id": 1
           }
         ]

@@ -1,5 +1,7 @@
 use nalgebra::Vector3;
 
+use crate::obj::{ObjModel, Triangle};
+
 pub struct HitRecord {
     pub t: f32,
     pub point: Vector3<f32>,
@@ -356,4 +358,93 @@ pub fn intersect_unit_cube(
         normal,
         front_face,
     })
+}
+
+
+const EPSILON: f32 = 1e-7;
+fn intersect_triangle(
+    origin: Vector3<f32>,
+    dir: Vector3<f32>,
+    tri: &Triangle,
+) -> Option<IntersectResult> {
+    let edge1 = tri.p1 - tri.p0;
+    let edge2 = tri.p2 - tri.p0;
+
+    let h = dir.cross(&edge2);
+    let a = edge1.dot(&h);
+
+    if a.abs() < EPSILON {
+        return None;
+    }
+
+    let f = 1.0 / a;
+
+    let s = origin - tri.p0;
+
+    let u = f * s.dot(&h);
+
+    if !(0.0..=1.0).contains(&u) {
+        return None;
+    }
+
+    let q = s.cross(&edge1);
+
+    let v = f * dir.dot(&q);
+
+    if v < 0.0 || u + v > 1.0 {
+        return None;
+    }
+
+    let t = f * edge2.dot(&q);
+
+    if t <= EPSILON {
+        return None;
+    }
+
+    let hit_point = origin + dir * t;
+
+    let mut normal = match (&tri.n0, &tri.n1, &tri.n2) {
+        (Some(n0), Some(n1), Some(n2)) => {
+            let w = 1.0 - u - v;
+            (n0 * w + n1 * u + n2 * v).normalize()
+        }
+        _ => tri.face_normal,
+    };
+
+    let front_face = dir.dot(&normal) < 0.0;
+
+    if !front_face {
+        normal = -normal;
+    }
+
+    Some(IntersectResult {
+        t,
+        hit_point,
+        normal,
+        front_face,
+    })
+}
+
+pub fn intersect_model(
+    model: &ObjModel,
+    origin: Vector3<f32>,
+    dir: Vector3<f32>,
+) -> Option<IntersectResult> {
+    let mut closest_hit = None;
+    let mut closest_t = f32::INFINITY;
+
+    if !model.bounds.intersect(origin, dir) {
+        return None;
+    }
+
+    for tri in &model.triangles {
+        if let Some(hit) = intersect_triangle(origin, dir, tri) {
+            if hit.t < closest_t {
+                closest_t = hit.t;
+                closest_hit = Some(hit);
+            }
+        }
+    }
+
+    closest_hit
 }

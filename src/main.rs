@@ -15,12 +15,18 @@ mod collisions;
 use collisions::intersect_unit_sphere;
 use collisions::intersect_unit_cone;
 use collisions::intersect_unit_cube;
+use collisions::intersect_model;
 use collisions::HitRecord;
 
 mod utils;
 
 mod argparser;
 use argparser::Args;
+
+mod obj;
+use obj::load_obj_into_cache;
+use crate::obj::ModelCache;
+
 
 /** format
 vim.keymap.set("n", "<leader>f", function()
@@ -43,7 +49,7 @@ fn intersect(
     depth: u8
 ) -> Vector3<f32> {
 
-    fn visit(node: &Node, ray: &Ray, hits: &mut Vec<HitRecord>) {
+    fn visit(node: &Node, ray: &Ray, hits: &mut Vec<HitRecord>, model_cache: &ModelCache) {
         // println!("{:?}", node.get_transform_world());
         
         // Transform ray to local coordinate space
@@ -64,6 +70,12 @@ fn intersect(
             intersect_unit_cone(n_ray.origin, n_ray.direction)
         } else if mesh_id == Some("cube") {
             intersect_unit_cube(n_ray.origin, n_ray.direction)
+        } else if mesh_id == Some("bunny") {
+            let m = &model_cache["bunny"];
+            intersect_model(m, n_ray.origin, n_ray.direction)
+        } else if mesh_id == Some("teapot") {
+            let m = &model_cache["teapot"];
+            intersect_model(m, n_ray.origin, n_ray.direction)
         } else {
             None
         };
@@ -94,13 +106,13 @@ fn intersect(
 
         // Recurse
         for child in node.get_children() {
-            visit(child, ray, hits);
+            visit(child, ray, hits, model_cache);
         }
     }
 
     // Walk the scene
     let mut hits:Vec<HitRecord> = vec![];
-    visit(scene.get_root(), ray, &mut hits);
+    visit(scene.get_root(), ray, &mut hits, &scene.model_cache);
 
     if hits.is_empty() {
         // return Vector3::new(0.0, 0.0, 0.0)
@@ -128,7 +140,7 @@ fn intersect(
             origin: hit.point + hit.normal * 0.0001
         };
         let mut shadow_hits:Vec<HitRecord> = vec![];
-        visit(scene.get_root(), &shadow_ray, &mut shadow_hits);
+        visit(scene.get_root(), &shadow_ray, &mut shadow_hits, &scene.model_cache);
         if !shadow_hits.is_empty() {
             continue
         }
@@ -222,6 +234,10 @@ fn render(
                 ]),
             );
         }
+
+        if y % 20 == 0 {
+            println!("{:.2}% done", (y as f32 /height as f32) * 100.0);
+        }
     }
     return image
 }
@@ -230,8 +246,32 @@ fn render(
 fn main() {
     let args = Args::parse();
 
-    let scene = read_scene(&args.scene_file);
+
+    // let bunny = models.get("bunny").unwrap();
+    // println!("Done loading models.....");
+
+
+    let mut scene = read_scene(&args.scene_file);
     scene.print_tree();
+
+    println!("Loading models.....");
+    load_obj_into_cache(
+        &mut scene.model_cache,
+        "bunny",
+        "models/bunny.obj",
+        true,
+    ).unwrap();
+
+    load_obj_into_cache(
+        &mut scene.model_cache,
+        "teapot",
+        "models/teapot.obj",
+        true,
+    ).unwrap();
+
+
+    println!("Done loading models.....");
+
 
     // Camera parameters
     let camera_position = scene.environment.camera_position;
