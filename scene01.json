@@ -25,22 +25,30 @@
     {
       "albedo": [0.3, 0.1, 0.3],
       "shine": 400,
-      "specular": 0.2
+      "specular": 0.2,
+      "reflectivity": 0.3,
+      "refraction_index": 0
     },
     {
       "albedo": [0.8, 0.1, 0.1],
       "shine": 800.0,
-      "specular": 0.5
+      "specular": 0.5,
+      "reflectivity": 0.3,
+      "refraction_index": 0
     },
     {
       "albedo": [0.2, 0.2, 0.1],
       "shine": 500.0,
-      "specular": 0.1
+      "specular": 0.1,
+      "reflectivity": 0.3,
+      "refraction_index": 0
     },
     {
       "albedo": [0.2, 0.8, 0.1],
       "shine": 300.0,
-      "specular": 0.4
+      "specular": 0.4,
+      "reflectivity": 0.3,
+      "refraction_index": 0
     }
   ],
   "root": {
@@ -59,6 +67,19 @@
       },
       {
         "transforms": [
+          { "type": "scale", "value": [3.0, 3.0, 3.0] },
+          { "type": "translate", "value": [-5, 0, -4] }
+        ],
+        "children": [
+          {
+            "mesh_id": "cube",
+            "material_id": 3
+          }
+        ]
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [2, 2, 2] },
           { "type": "translate", "value": [1, -1, 0] }
         ],
         "children": [

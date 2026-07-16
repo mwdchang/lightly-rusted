@@ -109,12 +109,20 @@
         },
         "specular": {
           "type": "number"
+        },
+        "reflectivity": {
+          "type": "number"
+        },
+        "refraction_index": {
+          "type": "number"
         }
       },
       "required": [
         "albedo",
         "shine",
-        "specular"
+        "specular",
+        "reflectivity",
+        "refract_index"
       ]
     },
 

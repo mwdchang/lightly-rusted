@@ -172,24 +172,32 @@ fn intersect(
 
 
     // Check for reflections
-    let reflect_direction = (
-        ray.direction - 2.0 * ray.direction.dot(&hit.normal) * hit.normal
-    ).normalize();
+    let material = scene.get_materials().get(hit.material_id as usize).unwrap();
+    let reflectivity = material.reflectivity;
 
-    let reflect_ray = Ray {
-        direction: reflect_direction,
-        origin: hit.point + 0.0001 * hit.normal
-    };
+    if reflectivity > 0.0 {
+        let mut reflect_contribution: Vector3<f32> = Vector3::zeros();
+        let reflect_direction = (
+            ray.direction - 2.0 * ray.direction.dot(&hit.normal) * hit.normal
+        ).normalize();
 
-    // println!("({}):{} ==>  {}", depth, ray.direction, reflect_ray.direction);
-    
+        let reflect_ray = Ray {
+            direction: reflect_direction,
+            origin: hit.point + 0.0001 * hit.normal
+        };
 
-    let mut reflect_contribution: Vector3<f32> = Vector3::zeros();
-    if depth < 2 {
-        reflect_contribution = intersect(&camera, &reflect_ray, &scene, depth+1);
+        if depth < 3 {
+            reflect_contribution = intersect(&camera, &reflect_ray, &scene, depth+1);
+        }
+
+        return 
+            (1.0 - reflectivity) * (contribution + specular + scene.environment.ambient_light) + 
+            reflectivity * reflect_contribution;
     }
 
-    return contribution + specular + scene.environment.ambient_light + 0.25 * reflect_contribution;
+    return contribution + specular + scene.environment.ambient_light; 
+
+    // println!("({}):{} ==>  {}", depth, ray.direction, reflect_ray.direction);
 }
 
 fn render(
