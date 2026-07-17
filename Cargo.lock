@@ -580,6 +580,7 @@ version = "0.1.0"
 dependencies = [
  "image",
  "nalgebra",
+ "rayon",
  "serde_json",
  "tobj",
 ]

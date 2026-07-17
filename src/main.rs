@@ -281,6 +281,10 @@ fn render_patch(
 }
 
 
+use rayon::prelude::*;
+use rayon::ThreadPoolBuilder;
+
+
 fn render(
     width: u32,
     height: u32,
@@ -290,31 +294,24 @@ fn render(
     let mut image = RgbImage::new(width, height);
     let patches = create_patches(width, height);
 
-    // Later: give these patches to worker threads
-    let mut cnt:u32 = 0;
-    let num_patches: usize = patches.len();
+    // Parallel rendering of patches using rayon
+    let patch_results: Vec<Vec<RenderedPixel>> = patches
+        .par_iter()
+        .map(|patch| render_patch(patch, width, height, camera, scene))
+        .collect();
 
-    for patch in patches {
-        cnt = cnt + 1;
-        let pixels = render_patch(
-            &patch,
-            width,
-            height,
-            camera,
-            scene,
-        );
-
+    let mut cnt: u32 = 0;
+    let num_patches = patch_results.len() as u32;
+    for pixels in patch_results {
+        cnt += 1;
         for pixel in pixels {
-            image.put_pixel(
-                pixel.x,
-                pixel.y,
-                pixel.color,
-            );
+            image.put_pixel(pixel.x, pixel.y, pixel.color);
         }
         println!("Done {}/{}", cnt, num_patches);
     }
     image
 }
+
 
 fn main() {
     let args = Args::parse();
@@ -350,6 +347,11 @@ fn main() {
         args.width,
         args.height,
     );
+
+    ThreadPoolBuilder::new()
+        .num_threads(args.workers)
+        .build_global()
+        .unwrap();
 
     let image = render(args.width, args.height, &camera, &scene);
     image.save("render-result.png").expect("Failed to save PNG");
