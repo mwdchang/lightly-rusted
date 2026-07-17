@@ -4,14 +4,16 @@ pub struct Args {
     pub scene_file: String,
     pub width: u32,
     pub height: u32,
+    pub workers: usize,
 }
 
 impl Args {
-    // Usage: lightly-rusted [--scene <file>] [--size <width>x<height>]
+    // Usage: lightly-rusted [--scene <file>] [--size <width>x<height>] [--workers <n>]
     pub fn parse() -> Self {
         let mut scene_file = String::from("scene01.json");
         let mut width: u32 = 400;
         let mut height: u32 = 300;
+        let mut workers: usize = 1;
 
         let args: Vec<String> = std::env::args().collect();
         let mut i = 1;
@@ -45,16 +47,27 @@ impl Args {
                         process::exit(1);
                     });
                 }
+                "--workers" => {
+                    i += 1;
+                    if i >= args.len() {
+                        eprintln!("Error: --workers requires a numeric argument");
+                        process::exit(1);
+                    }
+                    workers = args[i].parse().unwrap_or_else(|_| {
+                        eprintln!("Error: invalid workers count '{}'", args[i]);
+                        process::exit(1);
+                    });
+                }
                 unknown => {
                     eprintln!("Error: unknown argument '{}'", unknown);
-                    eprintln!("Usage: lightly-rusted [--scene <file>] [--size <width>x<height>]");
+                    eprintln!("Usage: lightly-rusted [--scene <file>] [--size <width>x<height>] [--workers <n>]");
                     process::exit(1);
                 }
             }
             i += 1;
         }
 
-        Args { scene_file, width, height }
+        Args { scene_file, width, height, workers }
     }
 }
 

@@ -208,49 +208,116 @@ fn intersect(
     }
 
     return contribution + specular + scene.environment.ambient_light; 
-
     // println!("({}):{} ==>  {}", depth, ray.direction, reflect_ray.direction);
 }
 
-fn render(
-    width: u32, 
-    height: u32, 
-    camera: &Camera, 
-    scene: &Scene
-) -> RgbImage {
-    let mut image = RgbImage::new(width, height);
-    for y in 0..height {
-        for x in 0..width {
-            let ray = camera.generate_ray(x, y, width, height);
-            let color = intersect(&camera, &ray, &scene, 0);
 
-            image.put_pixel(
+struct RenderPatch {
+    x0: u32,
+    y0: u32,
+    x1: u32,
+    y1: u32,
+}
+
+struct RenderedPixel {
+    x: u32,
+    y: u32,
+    color: Rgb<u8>,
+}
+
+fn create_patches(width: u32, height: u32) -> Vec<RenderPatch> {
+    const PATCH_SIZE: u32 = 96;
+
+    let mut patches = Vec::new();
+
+    let patches_x = (width + PATCH_SIZE - 1) / PATCH_SIZE;
+    let patches_y = (height + PATCH_SIZE - 1) / PATCH_SIZE;
+
+    for patch_y in 0..patches_y {
+        for patch_x in 0..patches_x {
+            let x0 = patch_x * PATCH_SIZE;
+            let y0 = patch_y * PATCH_SIZE;
+
+            let x1 = (x0 + PATCH_SIZE).min(width);
+            let y1 = (y0 + PATCH_SIZE).min(height);
+
+            patches.push(RenderPatch {
+                x0,
+                y0,
+                x1,
+                y1,
+            });
+        }
+    }
+    patches
+}
+
+fn render_patch(
+    patch: &RenderPatch,
+    width: u32,
+    height: u32,
+    camera: &Camera,
+    scene: &Scene,
+) -> Vec<RenderedPixel> {
+    let mut pixels = Vec::new();
+
+    for y in patch.y0..patch.y1 {
+        for x in patch.x0..patch.x1 {
+            let ray = camera.generate_ray(x, y, width, height);
+            let color = intersect(camera, &ray, scene, 0);
+
+            pixels.push(RenderedPixel {
                 x,
                 y,
-                Rgb([
+                color: Rgb([
                     (color.x.clamp(0.0, 1.0) * 255.0) as u8,
                     (color.y.clamp(0.0, 1.0) * 255.0) as u8,
                     (color.z.clamp(0.0, 1.0) * 255.0) as u8,
                 ]),
-            );
-        }
-
-        if y % 20 == 0 {
-            println!("{:.2}% done", (y as f32 /height as f32) * 100.0);
+            });
         }
     }
-    return image
+    pixels
 }
 
 
+fn render(
+    width: u32,
+    height: u32,
+    camera: &Camera,
+    scene: &Scene,
+) -> RgbImage {
+    let mut image = RgbImage::new(width, height);
+    let patches = create_patches(width, height);
+
+    // Later: give these patches to worker threads
+    let mut cnt:u32 = 0;
+    let num_patches: usize = patches.len();
+
+    for patch in patches {
+        cnt = cnt + 1;
+        let pixels = render_patch(
+            &patch,
+            width,
+            height,
+            camera,
+            scene,
+        );
+
+        for pixel in pixels {
+            image.put_pixel(
+                pixel.x,
+                pixel.y,
+                pixel.color,
+            );
+        }
+        println!("Done {}/{}", cnt, num_patches);
+    }
+    image
+}
+
 fn main() {
     let args = Args::parse();
-
-
-    // let bunny = models.get("bunny").unwrap();
-    // println!("Done loading models.....");
-
-
     let mut scene = read_scene(&args.scene_file);
     scene.print_tree();
 
@@ -269,9 +336,7 @@ fn main() {
         true,
     ).unwrap();
 
-
     println!("Done loading models.....");
-
 
     // Camera parameters
     let camera_position = scene.environment.camera_position;
