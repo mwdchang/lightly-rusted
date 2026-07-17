@@ -21,6 +21,12 @@ cargo run -- --size 1920x1080
 cargo run -- --scene scene02.json --size 800x600
 ```
 
+## Features
+- Primitive shapes: sphere, cube, cone
+- Hierarchical scene graph
+- Model meshes (via tobj loader)
+- Parallel rendering (via rayon)
+
 
 ## Scene graph spec
 See `schema.json`.
