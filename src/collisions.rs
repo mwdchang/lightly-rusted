@@ -1,6 +1,8 @@
 use nalgebra::Vector3;
 
 use crate::obj::{ObjModel, Triangle};
+use roots::{find_roots_quartic, Roots};
+
 
 pub struct HitRecord {
     pub t: f32,
@@ -67,108 +69,6 @@ pub fn intersect_unit_sphere(
 }
 
 
-
-/**
- * Cone intersection, generated
-**/
-/*
-pub fn intersect_unit_cone(
-    origin: Vector3<f32>,
-    dir: Vector3<f32>,
-) -> Option<IntersectResult> {
-    let mut closest: Option<IntersectResult> = None;
-
-    // ---- Cone side ----
-    //
-    // y^2 + z^2 = x^2
-    //
-    let a = dir.y * dir.y + dir.z * dir.z - dir.x * dir.x;
-    let b = 2.0 * (origin.y * dir.y + origin.z * dir.z - origin.x * dir.x);
-    let c = origin.y * origin.y + origin.z * origin.z - origin.x * origin.x;
-
-    let disc = b * b - 4.0 * a * c;
-
-    if disc >= 0.0 && a.abs() > 1e-6 {
-        let sqrt_disc = disc.sqrt();
-
-        let t0 = (-b - sqrt_disc) / (2.0 * a);
-        let t1 = (-b + sqrt_disc) / (2.0 * a);
-
-        for t in [t0, t1] {
-            if t <= 0.0 {
-                continue;
-            }
-
-            let hit = origin + dir * t;
-
-            // finite cone bounds
-            if hit.x < -1.0 || hit.x > 0.0 {
-                continue;
-            }
-
-            // Gradient of x^2 - y^2 - z^2
-            let mut normal = Vector3::new(
-                -2.0 * hit.x,
-                2.0 * hit.y,
-                2.0 * hit.z,
-            )
-            .normalize();
-
-            let front_face = dir.dot(&normal) < 0.0;
-
-            if !front_face {
-                normal = -normal;
-            }
-
-            let result = IntersectResult {
-                t,
-                hit_point: hit,
-                normal,
-                front_face,
-            };
-
-            if closest.is_none() || t < closest.as_ref().unwrap().t {
-                closest = Some(result);
-            }
-        }
-    }
-
-    // ---- Base disk ----
-    //
-    // Plane: x = -1
-    //
-    if dir.x.abs() > 1e-6 {
-        let t = (-1.0 - origin.x) / dir.x;
-
-        if t > 0.0 {
-            let hit = origin + dir * t;
-
-            // Disk radius is 1
-            if hit.y * hit.y + hit.z * hit.z <= 1.0 {
-                let mut normal = Vector3::new(-1.0, 0.0, 0.0);
-
-                let front_face = dir.dot(&normal) < 0.0;
-
-                if !front_face {
-                    normal = -normal;
-                }
-
-                let result = IntersectResult {
-                    t,
-                    hit_point: hit,
-                    normal,
-                    front_face,
-                };
-
-                if closest.is_none() || t < closest.as_ref().unwrap().t {
-                    closest = Some(result);
-                }
-            }
-        }
-    }
-    closest
-}
-*/
 
 pub fn intersect_unit_cone(
     origin: Vector3<f32>,
@@ -447,4 +347,100 @@ pub fn intersect_model(
     }
 
     closest_hit
+}
+
+
+
+fn clean(v: f64) -> f64 {
+    if v.abs() < 1e-6 {
+        0.0
+    } else {
+        v
+    }
+}
+
+fn solve_quartic(
+    a: f64,
+    b: f64,
+    c: f64,
+    d: f64,
+    e: f64,
+) -> Vec<f64> {
+    match find_roots_quartic(a, b, c, d, e) {
+        Roots::No(_) => vec![],
+        Roots::One([x]) => vec![x],
+        Roots::Two([x0, x1]) => vec![x0, x1],
+        Roots::Three([x0, x1, x2]) => vec![x0, x1, x2],
+        Roots::Four([x0, x1, x2, x3]) => vec![x0, x1, x2, x3],
+    }
+}
+
+
+pub fn intersect_unit_torus(
+    origin: Vector3<f32>,
+    dir: Vector3<f32>,
+) -> Option<IntersectResult> {
+    let R: f32 = 0.75;
+    let r: f32 = 0.25;
+
+    let g = dir.dot(&dir);
+    let h = 2.0 * origin.dot(&dir);
+    let i = origin.dot(&origin);
+
+    let j = dir.x * dir.x + dir.y * dir.y;
+    let k = 2.0 * (origin.x * dir.x + origin.y * dir.y);
+    let l = origin.x * origin.x + origin.y * origin.y;
+
+    let s = R * R - r * r;
+
+    let c4 = g * g;
+    let c3 = 2.0 * g * h;
+    let c2 = h * h + 2.0 * g * (i + s) - 4.0 * R * R * j;
+    let c1 = 2.0 * h * (i + s) - 4.0 * R * R * k;
+    let c0 = (i + s) * (i + s) - 4.0 * R * R * l;
+
+    let roots = solve_quartic(
+        c4 as f64, 
+        c3 as f64, 
+        c2 as f64, 
+        c1 as f64, 
+        c0 as f64
+    );
+
+    let mut best_t = f64::INFINITY;
+    // const EPS: f64 = 1e-3;
+    const EPS: f64 = 0.002;
+    
+    for t in roots {
+        if t > EPS && t < best_t {
+            best_t = t;
+        }
+    }
+
+    if !best_t.is_finite() {
+        return None;
+    }
+
+    let hit = origin + dir * best_t as f32;
+
+    let sum = hit.dot(&hit) + R * R - r * r;
+
+    let n = Vector3::new(
+        4.0 * hit.x * (sum - 2.0 * R * R),
+        4.0 * hit.y * (sum - 2.0 * R * R),
+        4.0 * hit.z * sum,
+    );
+
+    let normal = if n.norm_squared() > 1e-12 {
+        n.normalize()
+    } else {
+        Vector3::zeros()
+    };
+
+    Some(IntersectResult {
+        t: (best_t as f32),
+        hit_point: hit,
+        normal,
+        front_face: dir.dot(&normal) < 0.0,
+    })
 }

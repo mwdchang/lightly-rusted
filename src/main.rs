@@ -12,6 +12,7 @@ use models::Node;
 use models::read_scene;
 
 mod collisions;
+use collisions::intersect_unit_torus;
 use collisions::intersect_unit_sphere;
 use collisions::intersect_unit_cone;
 use collisions::intersect_unit_cube;
@@ -70,6 +71,8 @@ fn intersect(
             intersect_unit_cone(n_ray.origin, n_ray.direction)
         } else if mesh_id == Some("cube") {
             intersect_unit_cube(n_ray.origin, n_ray.direction)
+        } else if mesh_id == Some("torus") {
+            intersect_unit_torus(n_ray.origin, n_ray.direction)
         } else if mesh_id == Some("bunny") {
             let m = &model_cache["bunny"];
             intersect_model(m, n_ray.origin, n_ray.direction)
