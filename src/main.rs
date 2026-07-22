@@ -28,6 +28,8 @@ mod obj;
 use obj::load_obj_into_cache;
 use crate::obj::ModelCache;
 
+use std::fs;
+
 
 /** format
 vim.keymap.set("n", "<leader>f", function()
@@ -138,8 +140,9 @@ fn intersect(
 
     for light in scene.get_point_lights() {
         // Cast shadow ray to check if the light has any contributions
+        let to_light = light.position - hit.point;
         let shadow_ray = Ray {
-            direction: hit.normal,
+            direction: to_light.normalize(),
             origin: hit.point + hit.normal * 0.0001
         };
         let mut shadow_hits:Vec<HitRecord> = vec![];
@@ -256,6 +259,8 @@ fn create_patches(width: u32, height: u32) -> Vec<RenderPatch> {
 }
 
 fn render_patch(
+    total_patches: usize,
+    patch_idx: usize,
     patch: &RenderPatch,
     width: u32,
     height: u32,
@@ -280,7 +285,10 @@ fn render_patch(
             });
         }
     }
-    pixels
+
+    println!("patch {}/{}", patch_idx + 1, total_patches);
+
+    return pixels;
 }
 
 
@@ -300,17 +308,20 @@ fn render(
     // Parallel rendering of patches using rayon
     let patch_results: Vec<Vec<RenderedPixel>> = patches
         .par_iter()
-        .map(|patch| render_patch(patch, width, height, camera, scene))
+        .enumerate()
+        .map(|(patch_idx, patch)| render_patch(patches.len(), patch_idx, patch, width, height, camera, scene))
         .collect();
 
-    let mut cnt: u32 = 0;
-    let num_patches = patch_results.len() as u32;
+    // let mut cnt: u32 = 0;
+    // let num_patches = patch_results.len() as u32;
+
+    println!("Assemble patches...");
     for pixels in patch_results {
-        cnt += 1;
+        // cnt += 1;
         for pixel in pixels {
             image.put_pixel(pixel.x, pixel.y, pixel.color);
         }
-        println!("Done {}/{}", cnt, num_patches);
+        // println!("Done {}/{}", cnt, num_patches);
     }
     image
 }
@@ -322,20 +333,19 @@ fn main() {
     scene.print_tree();
 
     println!("Loading models.....");
-    load_obj_into_cache(
-        &mut scene.model_cache,
-        "bunny",
-        "models/bunny.obj",
-        true,
-    ).unwrap();
-
-    load_obj_into_cache(
-        &mut scene.model_cache,
-        "teapot",
-        "models/teapot.obj",
-        true,
-    ).unwrap();
-
+    for entry in fs::read_dir("./models").unwrap() {
+        let entry = entry.unwrap();
+        let path = entry.path();
+        if let Some(name) = path.file_stem().and_then(|s| s.to_str()) {
+            println!("{} name={}", path.to_str().unwrap(), name);
+            load_obj_into_cache(
+                &mut scene.model_cache,
+                name,
+                path.to_str().unwrap(),
+                true,
+            ).unwrap();
+        }
+    }
     println!("Done loading models.....");
 
     // Camera parameters

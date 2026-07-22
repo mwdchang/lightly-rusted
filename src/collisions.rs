@@ -261,7 +261,7 @@ pub fn intersect_unit_cube(
 }
 
 
-const EPSILON: f32 = 1e-7;
+const EPSILON: f32 = 1e-8;
 fn intersect_triangle(
     origin: Vector3<f32>,
     dir: Vector3<f32>,
