@@ -50,13 +50,22 @@
       "ior": 1
     },
     {
-      "albedo": [0.9, 0.9, 0.9],
+      "albedo": [0.5, 0.5, 0.5],
       "shine": 200.0,
-      "specular": 0.2,
-      "reflectivity": 0.1,
+      "specular": 0.0,
+      "reflectivity": 0.0,
       "transparency": 0.8,
       "ior": 1.13
+    },
+    {
+      "albedo": [0.1, 0.8, 0.1],
+      "shine": 0.0,
+      "specular": 0.0,
+      "reflectivity": 0.0,
+      "transparency": 0.0,
+      "ior": 1
     }
+
   ],
   "root": {
     "children": [
@@ -113,10 +122,10 @@
       },
       {
         "transforms": [
-          { "type": "scale", "value": [4.0, 4.0, 0.5] },
-          { "type": "rotate_x", "value": [0.9]},
-          { "type": "rotate_y", "value": [0.6]},
-          { "type": "translate", "value": [-2, 0.5, 0] }
+          { "type": "scale", "value": [2.0, 0.50, 0.10] },
+          { "type": "rotate_x", "value": [0.2]},
+          { "type": "rotate_y", "value": [-0.4]},
+          { "type": "translate", "value": [1.0, -1.0, 6.8] }
         ],
         "children": [
           {
@@ -124,7 +133,20 @@
             "material_id": 4
           }
         ]
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [0.5, 2.0, 0.5] },
+          { "type": "translate", "value": [2.5, -3.0, 3.5] }
+        ],
+        "children": [
+          {
+            "mesh_id": "cone",
+            "material_id": 5
+          }
+        ]
       }
+
     ]
   }
 }
