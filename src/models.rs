@@ -22,7 +22,8 @@ pub struct Material {
     pub shine: f32,
     pub specular: f32,
     pub reflectivity: f32,
-    pub refraction_index: f32,
+    pub transparency: f32,
+    pub ior: f32,
 }
 
 
@@ -317,7 +318,8 @@ pub fn read_scene(filename: &str) -> Scene {
             let shine = material["shine"].as_f64().unwrap() as f32;
             let specular = material["specular"].as_f64().unwrap() as f32;
             let reflectivity = material["reflectivity"].as_f64().unwrap() as f32;
-            let refraction_index = material["refraction_index"].as_f64().unwrap() as f32;
+            let ior = material["ior"].as_f64().unwrap() as f32;
+            let transparency = material["transparency"].as_f64().unwrap() as f32;
 
             let m = Material {
                 albedo: Vector3::new(
@@ -328,7 +330,8 @@ pub fn read_scene(filename: &str) -> Scene {
                 shine,
                 specular,
                 reflectivity,
-                refraction_index
+                transparency,
+                ior 
             };
             scene.add_material(m);
         });

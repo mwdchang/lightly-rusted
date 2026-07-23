@@ -113,7 +113,10 @@
         "reflectivity": {
           "type": "number"
         },
-        "refraction_index": {
+        "transparency": {
+          "type": "number"
+        },
+        "ior": {
           "type": "number"
         }
       },
@@ -122,7 +125,8 @@
         "shine",
         "specular",
         "reflectivity",
-        "refract_index"
+        "transparency",
+        "ior"
       ]
     },
 

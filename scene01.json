@@ -22,28 +22,40 @@
       "shine": 0,
       "specular": 0.0,
       "reflectivity": 0.1,
-      "refraction_index": 0
+      "transparency": 0.0,
+      "ior": 1
     },
     {
       "albedo": [1.0, 1.0, 0.0],
       "shine": 0.0,
       "specular": 0.0,
       "reflectivity": 0.0,
-      "refraction_index": 0
+      "transparency": 0.0,
+      "ior": 1
     },
     {
       "albedo": [0.0, 0.9, 0.9],
       "shine": 500.0,
       "specular": 0.1,
       "reflectivity": 0.2,
-      "refraction_index": 0
+      "transparency": 0.0,
+      "ior": 1
     },
     {
       "albedo": [1.0, 0.1, 0.1],
       "shine": 400.0,
       "specular": 0.4,
       "reflectivity": 0.4,
-      "refraction_index": 0
+      "transparency": 0.0,
+      "ior": 1
+    },
+    {
+      "albedo": [0.9, 0.9, 0.9],
+      "shine": 200.0,
+      "specular": 0.2,
+      "reflectivity": 0.1,
+      "transparency": 0.8,
+      "ior": 1.13
     }
   ],
   "root": {
@@ -98,8 +110,21 @@
             "material_id": 3
           }
         ]
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [4.0, 4.0, 0.5] },
+          { "type": "rotate_x", "value": [0.9]},
+          { "type": "rotate_y", "value": [0.6]},
+          { "type": "translate", "value": [-2, 0.5, 0] }
+        ],
+        "children": [
+          {
+            "mesh_id": "cube",
+            "material_id": 4
+          }
+        ]
       }
-
     ]
   }
 }

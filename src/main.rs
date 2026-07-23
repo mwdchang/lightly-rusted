@@ -43,8 +43,6 @@ end, { desc = "Format file" })
 * world_transform = translation * rotation * scale
 **/
 
-// Placeholder for real geometry intersection.
-// Later this will contain sphere/triangle tests.
 fn intersect(
     camera: &Camera, 
     ray: &Ray, 
@@ -100,12 +98,19 @@ fn intersect(
 
             let w_t = (w_point - ray.origin).norm();
 
+            let mut normal = w_normal;
+            let front_face = ray.direction.dot(&normal) < 0.0;
+            if !front_face {
+                normal = -normal;
+            }
+
             hits.push( HitRecord {
                 t: w_t,
                 point: w_point,
-                normal: w_normal,
+                normal: normal,
                 material_id: node.get_material_id(),
-                front_face: true
+                // front_face: true
+                front_face: front_face
             })
         }
 
@@ -147,9 +152,30 @@ fn intersect(
         };
         let mut shadow_hits:Vec<HitRecord> = vec![];
         visit(scene.get_root(), &shadow_ray, &mut shadow_hits, &scene.model_cache);
-        if !shadow_hits.is_empty() {
-            continue
+
+        let dist_to_light = to_light.norm();
+
+        let mut visibility = 1.0;
+        for shadow_hit in shadow_hits {
+            if shadow_hit.t > dist_to_light {
+                break; // hit is behind the light
+            }
+
+            let s_material = scene.get_materials().get(shadow_hit.material_id as usize).unwrap();
+            if s_material.transparency == 0.0 {
+                visibility = 0.0;
+                break;
+            }
+
+            visibility *= s_material.transparency;
+            if visibility < 0.001 {
+                break;
+            }
         }
+
+        // if !shadow_hits.is_empty() {
+        //     continue
+        // }
 
 
         // Light can reach, get material and compute diffuce and specular
@@ -160,7 +186,7 @@ fn intersect(
         let light_dir = to_light / distance;
 
         // Used to be 1.0, just making things look nice
-        let attenuation = 2.5 / (distance * distance);
+        let attenuation = 1.0 / (distance * distance);
         let ndotl = hit.normal.dot(&light_dir).max(0.0);
 
         contribution +=
@@ -168,7 +194,8 @@ fn intersect(
                 &light.intensity
             )   
             * attenuation
-            * ndotl;
+            * ndotl
+            * visibility;
 
         let view_dir = (camera.get_position() - hit.point).normalize();
         let halfway = (light_dir + view_dir).normalize();
@@ -185,16 +212,23 @@ fn intersect(
         specular += 
             light.intensity 
             * spec
-            * material.specular;
+            * material.specular
+            * visibility;
     }
 
 
     // Check for reflections
     let material = scene.get_materials().get(hit.material_id as usize).unwrap();
     let reflectivity = material.reflectivity;
+    let transparency = material.transparency;
+
+
+    let local_contrib = (contribution + specular + scene.environment.ambient_light);
+
+    let mut reflect_contrib: Vector3<f32> = Vector3::zeros();
+    let mut refract_contrib: Vector3<f32> = Vector3::zeros();
 
     if reflectivity > 0.0 {
-        let mut reflect_contribution: Vector3<f32> = Vector3::zeros();
         let reflect_direction = (
             ray.direction - 2.0 * ray.direction.dot(&hit.normal) * hit.normal
         ).normalize();
@@ -204,16 +238,54 @@ fn intersect(
             origin: hit.point + 0.0001 * hit.normal
         };
 
-        if depth < 3 {
-            reflect_contribution = intersect(&camera, &reflect_ray, &scene, depth+1);
+        if depth < 4 {
+            reflect_contrib = intersect(&camera, &reflect_ray, &scene, depth+1);
         }
-
-        return 
-            (1.0 - reflectivity) * (contribution + specular + scene.environment.ambient_light) + 
-            reflectivity * reflect_contribution;
     }
 
-    return contribution + specular + scene.environment.ambient_light; 
+    // Calculate refraction
+    if transparency > 0.0 {
+        // Snells
+        let (n1, n2) = if hit.front_face {
+            (1.0, material.ior)
+        } else {
+            (material.ior, 1.0)
+        };
+        let eta = n1 / n2;
+        let cos_theta = (-ray.direction)
+            .dot(&hit.normal)
+            .min(1.0);
+
+        let sin2_theta = 1.0 - cos_theta * cos_theta;
+        let k = 1.0 - eta * eta * sin2_theta;
+
+        if k < 0.0 {
+            // noop, total interal refraction
+        } else {
+            let refracted_dir =
+                eta * ray.direction
+                + (eta * cos_theta - k.sqrt()) * hit.normal;
+
+            let offset =
+                if hit.front_face {
+                    -hit.normal
+                } else {
+                     hit.normal
+                };
+
+            let refract_ray = Ray {
+                direction: refracted_dir.normalize(),
+                origin: hit.point + offset * 0.0001
+            };
+            refract_contrib = intersect(&camera, &refract_ray, &scene, depth+1);
+        }
+    }
+
+    return (1.0 - reflectivity - transparency) * local_contrib +
+        reflectivity * reflect_contrib +
+        transparency * refract_contrib;
+
+    // return contribution + specular + scene.environment.ambient_light; 
     // println!("({}):{} ==>  {}", depth, ray.direction, reflect_ray.direction);
 }
 
