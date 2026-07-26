@@ -1,4 +1,5 @@
 use image::{Rgb, RgbImage};
+
 use nalgebra::Point3;
 use nalgebra::Vector3;
 
@@ -17,6 +18,7 @@ use collisions::intersect_unit_sphere;
 use collisions::intersect_unit_cone;
 use collisions::intersect_unit_cube;
 use collisions::intersect_model;
+use collisions::sphere_uv;
 use collisions::HitRecord;
 
 mod utils;
@@ -27,6 +29,11 @@ use argparser::Args;
 mod obj;
 use obj::load_obj_into_cache;
 use crate::obj::ModelCache;
+
+
+mod texture;
+use texture::load_texture;
+use texture::sample_texture;
 
 use std::fs;
 
@@ -106,11 +113,13 @@ fn intersect(
 
             hits.push( HitRecord {
                 t: w_t,
+                opoint: r.hit_point,
                 point: w_point,
                 normal: normal,
                 material_id: node.get_material_id(),
                 // front_face: true
-                front_face: front_face
+                front_face: front_face,
+                mesh_id: mesh_id.unwrap().to_string()
             })
         }
 
@@ -189,13 +198,42 @@ fn intersect(
         let attenuation = 1.0 / (distance * distance);
         let ndotl = hit.normal.dot(&light_dir).max(0.0);
 
-        contribution +=
-            material.albedo.component_mul(
-                &light.intensity
-            )   
-            * attenuation
-            * ndotl
-            * visibility;
+        fn srgb_to_linear(c: f32) -> f32 {
+            if c <= 0.04045 {
+                c / 12.92
+            } else {
+                ((c + 0.055) / 1.055).powf(2.4)
+            }
+        }
+
+        if hit.mesh_id == "sphere" {
+            let t = &scene.texture_cache["checkered"];
+            let (u, v) = sphere_uv(hit.opoint);
+            let pixel = sample_texture(&t, u, v);
+            let rgb = Vector3::new(
+                pixel[0] as f32 / 255.0,
+                pixel[1] as f32 / 255.0,
+                pixel[2] as f32 / 255.0,
+            );
+            // println!("Sample ({},{}), {} {} {}", u, v, rgb.x, rgb.y, rgb.z);
+            contribution +=
+                rgb.component_mul(
+                    &light.intensity
+                )   
+                * attenuation
+                * ndotl
+                * visibility;
+
+        } else {
+            contribution +=
+                material.albedo.component_mul(
+                    &light.intensity
+                )   
+                * attenuation
+                * ndotl
+                * visibility;
+        }
+
 
         let view_dir = (camera.get_position() - hit.point).normalize();
         let halfway = (light_dir + view_dir).normalize();
@@ -419,6 +457,17 @@ fn main() {
         }
     }
     println!("Done loading models.....");
+    println!("");
+
+    println!("Loading textures.....");
+    load_texture(
+        &mut scene.texture_cache,
+        "checkered",
+        "./checkered.png"
+    ).unwrap();
+
+
+    println!("Done loading textures");
 
     // Camera parameters
     let camera_position = scene.environment.camera_position;

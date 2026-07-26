@@ -6,10 +6,13 @@ use roots::{find_roots_quartic, Roots};
 
 pub struct HitRecord {
     pub t: f32,
+
+    pub opoint: Vector3<f32>, // Temp
     pub point: Vector3<f32>,
     pub normal: Vector3<f32>,
     pub material_id: u32,
     pub front_face: bool,
+    pub mesh_id: String
 }
 
 
@@ -443,4 +446,15 @@ pub fn intersect_unit_torus(
         normal,
         front_face: dir.dot(&normal) < 0.0,
     })
+}
+
+
+use std::f32::consts::PI;
+pub fn sphere_uv(p: Vector3<f32>) -> (f32, f32) {
+    let theta = p.z.atan2(p.x); // longitude [-pi, pi]
+    let phi = p.y.asin();       // latitude [-pi/2, pi/2]
+
+    let u = 1.0 - (theta + PI) / (2.0 * PI);
+    let v = 0.5 - phi / PI;
+    (u, v)
 }

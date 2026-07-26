@@ -5,6 +5,10 @@ use serde_json::Value;
 use std::fs::File;
 
 use crate::obj::ModelCache;
+use crate::texture::TextureCache;
+use crate::texture::load_texture;
+
+
 use crate::utils::translate;
 use crate::utils::rotate_x;
 use crate::utils::rotate_y;
@@ -54,7 +58,8 @@ pub struct Scene {
     root: Node,
     point_lights: Vec<PointLight>,
     materials: Vec<Material>,
-    pub model_cache: ModelCache
+    pub model_cache: ModelCache,
+    pub texture_cache: TextureCache,
 }
 
 impl Node {
@@ -186,7 +191,8 @@ impl Scene {
             },
             point_lights: vec![],
             materials: vec![],
-            model_cache: ModelCache::new()
+            model_cache: ModelCache::new(),
+            texture_cache: TextureCache::new(),
         }
     }
 
