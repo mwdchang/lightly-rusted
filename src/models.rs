@@ -49,6 +49,10 @@ pub struct SceneEnvironment {
     pub ambient_light: Vector3<f32>,
     pub camera_position: Vector3<f32>,
     pub camera_target: Vector3<f32>,
+    pub shadows: bool,
+    pub reflections: bool,
+    pub refractions: bool,
+    pub secondary_ray_eps: f32
 }
 
 
@@ -187,7 +191,11 @@ impl Scene {
                 background: Vector3::zeros(),
                 ambient_light: Vector3::zeros(),
                 camera_position: Vector3::zeros(),
-                camera_target: Vector3::zeros()
+                camera_target: Vector3::zeros(),
+                shadows: true,
+                reflections: true,
+                refractions: true,
+                secondary_ray_eps: 0.0
             },
             point_lights: vec![],
             materials: vec![],
@@ -268,6 +276,12 @@ pub fn read_scene(filename: &str) -> Scene {
     let camera_position = env["camera_position"].as_array().unwrap();
     let camera_target = env["camera_target"].as_array().unwrap();
 
+    let shadows = env["shadows"].as_bool().unwrap();
+    let reflections = env["reflections"].as_bool().unwrap();
+    let refractions = env["refractions"].as_bool().unwrap();
+
+    let secondary_ray_eps = env["secondary_ray_eps"].as_f64().unwrap() as f32;
+
     let scene_env = SceneEnvironment {
         background: Vector3::new(
             background[0].as_f64().unwrap() as f32,
@@ -289,6 +303,10 @@ pub fn read_scene(filename: &str) -> Scene {
             camera_target[1].as_f64().unwrap() as f32,
             camera_target[2].as_f64().unwrap() as f32
         ),
+        shadows,
+        reflections,
+        refractions,
+        secondary_ray_eps
     };
     scene.set_environment(scene_env);
 

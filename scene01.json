@@ -4,7 +4,11 @@
     "background": [0, 0.0, 0],
     "ambient_light": [0.2, 0.2, 0.2],
     "camera_position": [0, 0, 10],
-    "camera_target": [0, 0, 0]
+    "camera_target": [0, 0, 0],
+    "shadows": true,
+    "reflections": true,
+    "refractions": true,
+    "secondary_ray_eps": 0.0275
   },
   "point_lights": [
     {

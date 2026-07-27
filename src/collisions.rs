@@ -388,6 +388,7 @@ pub fn intersect_unit_torus(
     origin: Vector3<f32>,
     dir: Vector3<f32>,
 ) -> Option<IntersectResult> {
+    #[allow(non_snake_case)]
     let R: f32 = 0.75;
     let r: f32 = 0.25;
 
@@ -417,7 +418,7 @@ pub fn intersect_unit_torus(
 
     let mut best_t = f64::INFINITY;
     // const EPS: f64 = 1e-3;
-    const EPS: f64 = 0.002;
+    const EPS: f64 = 0.012;
     
     for t in roots {
         if t > EPS && t < best_t {
@@ -445,12 +446,13 @@ pub fn intersect_unit_torus(
         Vector3::zeros()
     };
 
+    let (u, v) = torus_uv(hit, R);
     Some(IntersectResult {
         t: (best_t as f32),
         hit_point: hit,
         normal,
         front_face: dir.dot(&normal) < 0.0,
-        uv: Vector2::new(0.0, 0.0) // FIXME: ????
+        uv: Vector2::new(u, v)
     })
 }
 
@@ -494,3 +496,19 @@ pub fn cube_uv(hit: Vector3<f32>, normal: Vector3<f32>) -> (f32, f32) {
     };
     (u, v)
 }
+
+
+#[allow(non_snake_case)]
+pub fn torus_uv(hit: Vector3<f32>, R: f32) -> (f32, f32) {
+    let radial = (hit.x * hit.x + hit.y * hit.y).sqrt();
+
+    let u_angle = hit.y.atan2(hit.x);
+    let v_angle = hit.z.atan2(radial - R);
+
+    let u = (u_angle + PI) / (2.0 * PI);
+    let v = (v_angle + PI) / (2.0 * PI);
+
+    (u, v)
+}
+
+

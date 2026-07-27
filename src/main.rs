@@ -63,7 +63,7 @@ fn intersect(
         let inv = node.get_transform_inverse();
 
         let n_ray = Ray {
-            direction: inv.transform_vector(&ray.direction),
+            direction: inv.transform_vector(&ray.direction).normalize(),
             origin: inv
                 .transform_point(&Point3::from(ray.origin))
                 .coords,
@@ -154,35 +154,33 @@ fn intersect(
         let to_light = light.position - hit.point;
         let shadow_ray = Ray {
             direction: to_light.normalize(),
-            origin: hit.point + hit.normal * 0.0001
+            origin: hit.point + hit.normal * scene.environment.secondary_ray_eps
         };
-        let mut shadow_hits:Vec<HitRecord> = vec![];
-        visit(scene.get_root(), &shadow_ray, &mut shadow_hits, &scene.model_cache);
-
-        let dist_to_light = to_light.norm();
-
         let mut visibility = 1.0;
-        for shadow_hit in shadow_hits {
-            if shadow_hit.t > dist_to_light {
-                break; // hit is behind the light
-            }
 
-            let s_material = scene.get_materials().get(shadow_hit.material_id as usize).unwrap();
-            if s_material.transparency == 0.0 {
-                visibility = 0.0;
-                break;
-            }
+        if scene.environment.shadows == true {
+            let mut shadow_hits:Vec<HitRecord> = vec![];
+            visit(scene.get_root(), &shadow_ray, &mut shadow_hits, &scene.model_cache);
 
-            visibility *= s_material.transparency;
-            if visibility < 0.001 {
-                break;
+            let dist_to_light = to_light.norm();
+
+            for shadow_hit in shadow_hits {
+                if shadow_hit.t > dist_to_light {
+                    break; // hit is behind the light
+                }
+
+                let s_material = scene.get_materials().get(shadow_hit.material_id as usize).unwrap();
+                if s_material.transparency == 0.0 {
+                    visibility = 0.0;
+                    break;
+                }
+
+                visibility *= s_material.transparency;
+                if visibility < 0.001 {
+                    break;
+                }
             }
         }
-
-        // if !shadow_hits.is_empty() {
-        //     continue
-        // }
-
 
         // Light can reach, get material and compute diffuce and specular
         let material = scene.get_materials().get(hit.material_id as usize).unwrap();
@@ -258,14 +256,14 @@ fn intersect(
     let mut reflect_contrib: Vector3<f32> = Vector3::zeros();
     let mut refract_contrib: Vector3<f32> = Vector3::zeros();
 
-    if reflectivity > 0.0 {
+    if reflectivity > 0.0 && scene.environment.reflections == true {
         let reflect_direction = (
             ray.direction - 2.0 * ray.direction.dot(&hit.normal) * hit.normal
         ).normalize();
 
         let reflect_ray = Ray {
             direction: reflect_direction,
-            origin: hit.point + 0.0001 * hit.normal
+            origin: hit.point + scene.environment.secondary_ray_eps * hit.normal
         };
 
         if depth < 4 {
@@ -274,7 +272,7 @@ fn intersect(
     }
 
     // Calculate refraction
-    if transparency > 0.0 {
+    if transparency > 0.0 && scene.environment.refractions == true {
         // Snells
         let (n1, n2) = if hit.front_face {
             (1.0, material.ior)
@@ -305,7 +303,7 @@ fn intersect(
 
             let refract_ray = Ray {
                 direction: refracted_dir.normalize(),
-                origin: hit.point + offset * 0.0001
+                origin: hit.point + offset * scene.environment.secondary_ray_eps
             };
             refract_contrib = intersect(&camera, &refract_ray, &scene, depth+1);
         }

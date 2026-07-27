@@ -72,13 +72,29 @@
         },
         "camera_target": {
           "$ref": "#/$defs/vec3"
+        },
+        "shadows": {
+          "type": "boolean"
+        },
+        "reflections": {
+          "type": "boolean"
+        },
+        "refractions": {
+          "type": "boolean"
+        },
+        "secondary_ray_eps": {
+          "type": "number" 
         }
       },
       "required": [
         "background",
         "ambient_light",
         "camera_position",
-        "camera_target"
+        "camera_target",
+        "shadows",
+        "reflections",
+        "refractions",
+        "secondary_ray_eps"
       ]
     },
 
