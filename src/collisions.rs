@@ -137,12 +137,18 @@ pub fn intersect_unit_cone(
                 normal = -normal;
             }
 
+
+            let theta = hit.z.atan2(hit.x);
+            let u = 0.5 + theta / (2.0 * std::f32::consts::PI);
+            let v = hit.y;
+
+
             let result = IntersectResult {
                 t,
                 hit_point: hit,
                 normal,
                 front_face,
-                uv: Vector2::new(0.0, 0.0) // FIXME: TODO
+                uv: Vector2::new(u, v)
             };
 
             if closest.is_none() || t < closest.as_ref().unwrap().t {
@@ -171,12 +177,16 @@ pub fn intersect_unit_cone(
                     normal = -normal;
                 }
 
+                let u = hit.x * 0.5 + 0.5;
+                let v = hit.z * 0.5 + 0.5;
+
+
                 let result = IntersectResult {
                     t,
                     hit_point: hit,
                     normal,
                     front_face,
-                    uv: Vector2::new(0.0, 0.0) // FIXME
+                    uv: Vector2::new(u, v)
                 };
 
                 if closest.is_none() || t < closest.as_ref().unwrap().t {
