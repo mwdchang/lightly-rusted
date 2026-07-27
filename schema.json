@@ -104,6 +104,9 @@
         "albedo": {
           "$ref": "#/$defs/vec3"
         },
+        "texture": {
+          "type": "string"
+        },
         "shine": {
           "type": "number"
         },
@@ -121,12 +124,19 @@
         }
       },
       "required": [
-        "albedo",
         "shine",
         "specular",
         "reflectivity",
         "transparency",
         "ior"
+      ],
+      "oneOf": [
+        {
+          "required": ["albedo"]
+        },
+        {
+          "required": ["texture"]
+        }
       ]
     },
 

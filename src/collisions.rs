@@ -1,4 +1,5 @@
 use nalgebra::Vector3;
+use nalgebra::Vector2;
 
 use crate::obj::{ObjModel, Triangle};
 use roots::{find_roots_quartic, Roots};
@@ -12,7 +13,9 @@ pub struct HitRecord {
     pub normal: Vector3<f32>,
     pub material_id: u32,
     pub front_face: bool,
-    pub mesh_id: String
+    pub mesh_id: String,
+
+    pub uv: Vector2<f32>
 }
 
 
@@ -21,6 +24,7 @@ pub struct IntersectResult {
     pub hit_point: Vector3<f32>,
     pub normal: Vector3<f32>,
     pub front_face: bool,
+    pub uv: Vector2<f32>,
 }
 
 /**
@@ -51,20 +55,26 @@ pub fn intersect_unit_sphere(
     if t0 > 0.0 {
         let hitpoint = origin + dir * t0;
         let normal = hitpoint.normalize();
+        let (u, v) = sphere_uv(hitpoint);
+
         return Some(IntersectResult {
             t: t0,
             hit_point: hitpoint,
             normal: normal,
             front_face: dir.dot(&normal) < 0.0,
+            uv: Vector2::new(u, v)
         });
     } else if t1 > 0.0 {
         let hitpoint = origin + dir * t1;
         let normal = hitpoint.normalize();
+        let (u, v) = sphere_uv(hitpoint);
+
         return Some(IntersectResult {
             t: t1,
             hit_point: hitpoint,
             normal: normal,
             front_face: dir.dot(&normal) < 0.0,
+            uv: Vector2::new(u, v)
         });
     } else {
         None
@@ -136,6 +146,7 @@ pub fn intersect_unit_cone(
                 hit_point: hit,
                 normal,
                 front_face,
+                uv: Vector2::new(0.0, 0.0) // FIXME: TODO
             };
 
             if closest.is_none() || t < closest.as_ref().unwrap().t {
@@ -169,6 +180,7 @@ pub fn intersect_unit_cone(
                     hit_point: hit,
                     normal,
                     front_face,
+                    uv: Vector2::new(0.0, 0.0) // FIXME
                 };
 
                 if closest.is_none() || t < closest.as_ref().unwrap().t {
@@ -255,11 +267,14 @@ pub fn intersect_unit_cube(
         -hit_normal
     };
 
+    let (u, v) = cube_uv(hit_point, normal);
+
     Some(IntersectResult {
         t,
         hit_point,
         normal,
         front_face,
+        uv: Vector2::new(u, v)
     })
 }
 
@@ -325,6 +340,7 @@ fn intersect_triangle(
         hit_point,
         normal,
         front_face,
+        uv: Vector2::new(0.0, 0.0) // FIXME: Need to come from obj file
     })
 }
 
@@ -445,6 +461,7 @@ pub fn intersect_unit_torus(
         hit_point: hit,
         normal,
         front_face: dir.dot(&normal) < 0.0,
+        uv: Vector2::new(0.0, 0.0) // FIXME: ????
     })
 }
 
@@ -456,5 +473,35 @@ pub fn sphere_uv(p: Vector3<f32>) -> (f32, f32) {
 
     let u = 1.0 - (theta + PI) / (2.0 * PI);
     let v = 0.5 - phi / PI;
+    (u, v)
+}
+
+
+pub fn cube_uv(hit: Vector3<f32>, normal: Vector3<f32>) -> (f32, f32) {
+    let (u, v) = if normal.x > 0.5 {
+        // +X
+        ( hit.z + 0.5,
+          hit.y + 0.5 )
+    } else if normal.x < -0.5 {
+        // -X
+        ( 0.5 - hit.z,
+          hit.y + 0.5 )
+    } else if normal.y > 0.5 {
+        // +Y
+        ( hit.x + 0.5,
+          0.5 - hit.z )
+    } else if normal.y < -0.5 {
+        // -Y
+        ( hit.x + 0.5,
+          hit.z + 0.5 )
+    } else if normal.z > 0.5 {
+        // +Z
+        ( hit.x + 0.5,
+          hit.y + 0.5 )
+    } else {
+        // -Z
+        ( 0.5 - hit.x,
+          hit.y + 0.5 )
+    };
     (u, v)
 }

@@ -6,8 +6,6 @@ use std::fs::File;
 
 use crate::obj::ModelCache;
 use crate::texture::TextureCache;
-use crate::texture::load_texture;
-
 
 use crate::utils::translate;
 use crate::utils::rotate_x;
@@ -22,7 +20,9 @@ pub struct PointLight {
 }
 
 pub struct Material {
-    pub albedo: Vector3<f32>, // basically diffuse
+    pub albedo: Option<Vector3<f32>>, // basically diffuse
+    pub texture: Option<String>,
+    
     pub shine: f32,
     pub specular: f32,
     pub reflectivity: f32,
@@ -196,9 +196,9 @@ impl Scene {
         }
     }
 
-    pub fn get_environment(&self) -> &SceneEnvironment {
-        &self.environment
-    }
+    // pub fn get_environment(&self) -> &SceneEnvironment {
+    //     &self.environment
+    // }
 
     pub fn set_environment(&mut self, e: SceneEnvironment) {
         self.environment = e;
@@ -214,9 +214,9 @@ impl Scene {
     }
 
 
-    pub fn get_root_mut(&mut self) -> &mut Node {
-        &mut self.root
-    }
+    // pub fn get_root_mut(&mut self) -> &mut Node {
+    //     &mut self.root
+    // }
 
     pub fn add_point_light(&mut self, pl: PointLight) {
         self.point_lights.push(pl);
@@ -241,7 +241,9 @@ impl Scene {
         println!("Materials");
 
         for m in self.get_materials() {
-            println!("{} {}", m.shine, m.albedo);
+            if m.albedo.is_some() {
+                println!("{} {}", m.shine, m.albedo.unwrap());
+            }
         }
 
         self.root.print_tree_recursive(0);
@@ -320,7 +322,31 @@ pub fn read_scene(filename: &str) -> Scene {
         .unwrap()
         .iter()
         .for_each(|material| {
-            let vals = material["albedo"].as_array().unwrap();
+
+            let albedo = match material.get("albedo") {
+                Some(albedo) => {
+                    let arr = albedo.as_array().unwrap();
+                    Some(
+                        Vector3::new(
+                            arr[0].as_f64().unwrap() as f32,
+                            arr[1].as_f64().unwrap() as f32,
+                            arr[2].as_f64().unwrap() as f32,
+                        )
+                    )
+                }
+                None => None,
+            };
+
+
+            let texture = match material.get("texture") {
+                Some(texture) => {
+                    let r = texture.as_str().unwrap();
+                    Some(r.to_string())
+                }
+                None => None
+            };
+
+
             let shine = material["shine"].as_f64().unwrap() as f32;
             let specular = material["specular"].as_f64().unwrap() as f32;
             let reflectivity = material["reflectivity"].as_f64().unwrap() as f32;
@@ -328,11 +354,8 @@ pub fn read_scene(filename: &str) -> Scene {
             let transparency = material["transparency"].as_f64().unwrap() as f32;
 
             let m = Material {
-                albedo: Vector3::new(
-                    vals[0].as_f64().unwrap() as f32,
-                    vals[1].as_f64().unwrap() as f32,
-                    vals[2].as_f64().unwrap() as f32,
-                ),
+                albedo: albedo,
+                texture: texture,
                 shine,
                 specular,
                 reflectivity,

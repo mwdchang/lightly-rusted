@@ -19,6 +19,7 @@ use collisions::intersect_unit_cone;
 use collisions::intersect_unit_cube;
 use collisions::intersect_model;
 use collisions::sphere_uv;
+use collisions::cube_uv;
 use collisions::HitRecord;
 
 mod utils;
@@ -117,9 +118,9 @@ fn intersect(
                 point: w_point,
                 normal: normal,
                 material_id: node.get_material_id(),
-                // front_face: true
                 front_face: front_face,
-                mesh_id: mesh_id.unwrap().to_string()
+                mesh_id: mesh_id.unwrap().to_string(),
+                uv: r.uv
             })
         }
 
@@ -206,6 +207,38 @@ fn intersect(
             }
         }
 
+        if material.texture.is_some() {
+            let key = material.texture.as_ref().unwrap();
+            let tex = &scene.texture_cache[key];
+
+            let pixel = sample_texture(
+                &tex, 
+                hit.uv.x, 
+                hit.uv.y
+            );
+            let texture_contrib = Vector3::new(
+                pixel[0] as f32 / 255.0,
+                pixel[1] as f32 / 255.0,
+                pixel[2] as f32 / 255.0,
+            );
+
+            contribution +=
+                texture_contrib.component_mul(
+                    &light.intensity
+                )   
+                * attenuation
+                * ndotl
+                * visibility;
+        } else {
+            contribution +=
+                material.albedo.unwrap().component_mul(
+                    &light.intensity
+                )   
+                * attenuation
+                * ndotl
+                * visibility;
+        }
+
         if hit.mesh_id == "sphere" {
             let t = &scene.texture_cache["checkered"];
             let (u, v) = sphere_uv(hit.opoint);
@@ -216,22 +249,8 @@ fn intersect(
                 pixel[2] as f32 / 255.0,
             );
             // println!("Sample ({},{}), {} {} {}", u, v, rgb.x, rgb.y, rgb.z);
-            contribution +=
-                rgb.component_mul(
-                    &light.intensity
-                )   
-                * attenuation
-                * ndotl
-                * visibility;
 
         } else {
-            contribution +=
-                material.albedo.component_mul(
-                    &light.intensity
-                )   
-                * attenuation
-                * ndotl
-                * visibility;
         }
 
 
@@ -459,15 +478,31 @@ fn main() {
     println!("Done loading models.....");
     println!("");
 
+
     println!("Loading textures.....");
-    load_texture(
-        &mut scene.texture_cache,
-        "checkered",
-        "./checkered.png"
-    ).unwrap();
-
-
+    for entry in fs::read_dir("./textures").unwrap() {
+        let entry = entry.unwrap();
+        let path = entry.path();
+        if let Some(name) = path.file_stem().and_then(|s| s.to_str()) {
+            println!("{} name={}", path.to_str().unwrap(), name);
+            load_texture(
+                &mut scene.texture_cache,
+                name,
+                path.to_str().unwrap()
+            ).unwrap();
+        }
+    }
     println!("Done loading textures");
+
+
+    // println!("Loading textures.....");
+    // load_texture(
+    //     &mut scene.texture_cache,
+    //     "checkered",
+    //     "./checkered.png"
+    // ).unwrap();
+
+
 
     // Camera parameters
     let camera_position = scene.environment.camera_position;
@@ -491,3 +526,4 @@ fn main() {
     image.save("render-result.png").expect("Failed to save PNG");
     println!("Rendered {}x{} image", args.width, args.height);
 }
+

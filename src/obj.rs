@@ -1,7 +1,6 @@
 use tobj;
 use nalgebra::Vector3;
 use std::collections::HashMap;
-use std::sync::{LazyLock, Mutex};
 
 pub type ModelCache = HashMap<String, ObjModel>;
 
