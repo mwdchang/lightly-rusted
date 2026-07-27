@@ -18,8 +18,6 @@ use collisions::intersect_unit_sphere;
 use collisions::intersect_unit_cone;
 use collisions::intersect_unit_cube;
 use collisions::intersect_model;
-use collisions::sphere_uv;
-use collisions::cube_uv;
 use collisions::HitRecord;
 
 mod utils;
@@ -114,12 +112,10 @@ fn intersect(
 
             hits.push( HitRecord {
                 t: w_t,
-                opoint: r.hit_point,
                 point: w_point,
                 normal: normal,
                 material_id: node.get_material_id(),
                 front_face: front_face,
-                mesh_id: mesh_id.unwrap().to_string(),
                 uv: r.uv
             })
         }
@@ -199,14 +195,6 @@ fn intersect(
         let attenuation = 1.0 / (distance * distance);
         let ndotl = hit.normal.dot(&light_dir).max(0.0);
 
-        fn srgb_to_linear(c: f32) -> f32 {
-            if c <= 0.04045 {
-                c / 12.92
-            } else {
-                ((c + 0.055) / 1.055).powf(2.4)
-            }
-        }
-
         if material.texture.is_some() {
             let key = material.texture.as_ref().unwrap();
             let tex = &scene.texture_cache[key];
@@ -239,21 +227,6 @@ fn intersect(
                 * visibility;
         }
 
-        if hit.mesh_id == "sphere" {
-            let t = &scene.texture_cache["checkered"];
-            let (u, v) = sphere_uv(hit.opoint);
-            let pixel = sample_texture(&t, u, v);
-            let rgb = Vector3::new(
-                pixel[0] as f32 / 255.0,
-                pixel[1] as f32 / 255.0,
-                pixel[2] as f32 / 255.0,
-            );
-            // println!("Sample ({},{}), {} {} {}", u, v, rgb.x, rgb.y, rgb.z);
-
-        } else {
-        }
-
-
         let view_dir = (camera.get_position() - hit.point).normalize();
         let halfway = (light_dir + view_dir).normalize();
         let mut spec = hit.normal
@@ -280,7 +253,7 @@ fn intersect(
     let transparency = material.transparency;
 
 
-    let local_contrib = (contribution + specular + scene.environment.ambient_light);
+    let local_contrib = contribution + specular + scene.environment.ambient_light;
 
     let mut reflect_contrib: Vector3<f32> = Vector3::zeros();
     let mut refract_contrib: Vector3<f32> = Vector3::zeros();

@@ -42,7 +42,7 @@
       "ior": 1
     },
     {
-      "albedo": [1.0, 0.1, 0.1],
+      "texture": "polka",
       "shine": 0.0,
       "specular": 0.0,
       "reflectivity": 0.0,
@@ -65,7 +65,6 @@
       "transparency": 0.0,
       "ior": 1
     }
-
   ],
   "root": {
     "children": [

@@ -7,14 +7,10 @@ use roots::{find_roots_quartic, Roots};
 
 pub struct HitRecord {
     pub t: f32,
-
-    pub opoint: Vector3<f32>, // Temp
     pub point: Vector3<f32>,
     pub normal: Vector3<f32>,
     pub material_id: u32,
     pub front_face: bool,
-    pub mesh_id: String,
-
     pub uv: Vector2<f32>
 }
 
@@ -370,13 +366,6 @@ pub fn intersect_model(
 
 
 
-fn clean(v: f64) -> f64 {
-    if v.abs() < 1e-6 {
-        0.0
-    } else {
-        v
-    }
-}
 
 fn solve_quartic(
     a: f64,

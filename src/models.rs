@@ -108,9 +108,9 @@ impl Node {
         &self.children
     }
 
-    pub fn get_child(&mut self, index: usize) -> Option<&Node> {
-        self.children.get(index)
-    }
+    // pub fn get_child(&mut self, index: usize) -> Option<&Node> {
+    //     self.children.get(index)
+    // }
 
 
     pub fn add_child(&mut self, child: Node) {
@@ -242,7 +242,9 @@ impl Scene {
 
         for m in self.get_materials() {
             if m.albedo.is_some() {
-                println!("{} {}", m.shine, m.albedo.unwrap());
+                println!("Albedo {}", m.albedo.unwrap());
+            } else {
+                println!("Texture {}", m.texture.as_ref().unwrap());
             }
         }
 

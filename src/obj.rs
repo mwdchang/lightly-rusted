@@ -4,9 +4,6 @@ use std::collections::HashMap;
 
 pub type ModelCache = HashMap<String, ObjModel>;
 
-// pub static MODELS: LazyLock<Mutex<ModelCache>> = LazyLock::new(|| {
-//     Mutex::new(HashMap::new())
-// });
 
 #[derive(Clone, Debug)]
 pub struct Triangle {
@@ -53,10 +50,12 @@ impl BoundingBox {
         self.max.z = self.max.z.max(p.z);
     }
 
+    #[allow(dead_code)]
     pub fn center(&self) -> Vector3<f32> {
         (self.min + self.max) * 0.5
     }
 
+    #[allow(dead_code)]
     pub fn size(&self) -> Vector3<f32> {
         self.max - self.min
     }

@@ -23,12 +23,13 @@ cargo run -- --scene scene02.json --size 800x600
 
 ## Features
 - Primitive shapes: sphere, cube, cone
+- Reflection, refraction, shadows
 - Hierarchical scene graph
 - Model meshes (via tobj loader)
-- Parallel rendering (via rayon)
+- Parallel patch rendering (via rayon)
+- Texture support
 
 
 ## Scene graph spec
-See `schema.json`.
+See `schema.json` and example scene `scene01.json`.
 
-The transforms are specified in order you want to apply them, so if `transforms = [t1, t2, t3]` the local transformation matrix is `t3 * t2 * t1 * I`

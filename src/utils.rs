@@ -19,3 +19,23 @@ pub fn rotate_y(angle: f32) -> Matrix4<f32> {
 pub fn rotate_z(angle: f32) -> Matrix4<f32> {
     Rotation3::from_euler_angles(0.0, 0.0, angle).to_homogeneous()
 }
+
+#[allow(dead_code)]
+pub fn srgb_to_linear(c: f32) -> f32 {
+    if c <= 0.04045 {
+        c / 12.92
+    } else {
+        ((c + 0.055) / 1.055).powf(2.4)
+    }
+}
+
+
+#[allow(dead_code)]
+pub fn clean(v: f64) -> f64 {
+    if v.abs() < 1e-6 {
+        0.0
+    } else {
+        v
+    }
+}
+
