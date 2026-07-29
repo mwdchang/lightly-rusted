@@ -36,4 +36,4 @@ See `schema.json` and example scene `scene01.json`.
 
 ## Examples
 Primitives
-![Primitives example](examples/primitives.png)
+<img src="examples/primitives.png" alt="Primitives example" width="50%">
