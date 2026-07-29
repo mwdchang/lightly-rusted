@@ -1,0 +1,152 @@
+{
+  "description": "Primitives",
+  "environment": {
+    "background": [0, 0.0, 0],
+    "ambient_light": [0.1, 0.1, 0.1],
+    "camera_position": [5, 7, 11],
+    "camera_target": [0, 0, 0],
+    "shadows": true,
+    "reflections": false,
+    "refractions": false,
+    "secondary_ray_eps": 0.01
+  },
+  "point_lights": [
+    {
+      "position": [0, 8, 15],
+      "intensity": [300.0, 300.0, 300.0]
+    }
+  ],
+  "materials": [
+    {
+      "albedo": [0.9, 0.9, 0.9],
+      "shine": 200,
+      "specular": 0.5,
+      "reflectivity": 0.4,
+      "transparency": 0.0,
+      "ior": 1
+    },
+    {
+      "albedo": [1.0, 0.1, 0.1],
+      "shine": 200,
+      "specular": 0.0,
+      "reflectivity": 0.0,
+      "transparency": 0.0,
+      "ior": 1
+    },
+    {
+      "albedo": [0.1, 1.0, 0.1],
+      "shine": 200,
+      "specular": 0.0,
+      "reflectivity": 0.0,
+      "transparency": 0.5,
+      "ior": 1
+    },
+    {
+      "albedo": [0.1, 0.1, 1.0],
+      "shine": 200,
+      "specular": 0.0,
+      "reflectivity": 0.0,
+      "transparency": 0.0,
+      "ior": 1
+    },
+    {
+      "albedo": [1.0, 1.0, 0.1],
+      "shine": 200,
+      "specular": 0.0,
+      "reflectivity": 0.0,
+      "transparency": 0.0,
+      "ior": 1
+    },
+    {
+      "albedo": [0.1, 1.0, 1.0],
+      "shine": 200,
+      "specular": 0.0,
+      "reflectivity": 0.0,
+      "transparency": 0.0,
+      "ior": 1
+    }
+  ],
+  "root": {
+    "children": [
+      {
+        "transforms": [
+          { "type": "scale", "value": [90.0, 0.05, 90.0] },
+          { "type": "translate", "value": [0, -2, 0] }
+        ],
+        "children": [
+          {
+            "mesh_id": "cube",
+            "material_id": 0
+          }
+        ]
+      },
+      {
+        "transforms": [
+          { "type": "translate", "value": [0, 0, 4] }
+        ],
+        "children": [
+          {
+            "transforms": [
+              { "type": "scale", "value": [1.2, 1.2, 1.2] },
+              { "type": "translate", "value": [-3, 0, 0] }
+            ],
+            "children": [
+              {
+                "mesh_id": "torus",
+                "material_id": 1
+              }
+            ]
+          },
+          {
+            "transforms": [
+              { "type": "scale", "value": [1.2, 1.2, 1.2] },
+              { "type": "translate", "value": [0, 0, 0] }
+            ],
+            "children": [
+              {
+                "mesh_id": "cube",
+                "material_id": 2
+              }
+            ]
+          },
+          {
+            "transforms": [
+              { "type": "scale", "value": [1.2, 1.2, 1.2] },
+              { "type": "translate", "value": [3, 0, 0] }
+            ],
+            "children": [
+              {
+                "mesh_id": "sphere",
+                "material_id": 3
+              }
+            ]
+          },
+          {
+            "transforms": [
+              { "type": "scale", "value": [1.2, 1.2, 1.2] },
+              { "type": "translate", "value": [-3, 0, -4] }
+            ],
+            "children": [
+              {
+                "mesh_id": "cone",
+                "material_id": 4
+              }
+            ]
+          },
+          {
+            "transforms": [
+              { "type": "scale", "value": [1.2, 1.2, 1.2] },
+              { "type": "translate", "value": [0, 0, -4] }
+            ],
+            "children": [
+              {
+                "mesh_id": "cylinder",
+                "material_id": 5
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

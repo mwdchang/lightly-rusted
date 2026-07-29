@@ -105,6 +105,7 @@
           "$ref": "#/$defs/vec3"
         },
         "intensity": {
+          "description": "The RGB intensities of the light source. A rough rule of the the thumb is ~10x the distance between the subject and the light position, eg: if object at (10, 10, 10) and light position at (10, 10, 30) values around 300 should iluminate the subject well",
           "$ref": "#/$defs/vec3"
         }
       },
@@ -118,24 +119,31 @@
       "type": "object",
       "properties": {
         "albedo": {
+          "description": "Material colour", 
           "$ref": "#/$defs/vec3"
         },
         "texture": {
+          "description": "Material texture id", 
           "type": "string"
         },
         "shine": {
+          "description": "This is the exponent part that controls the highlight",
           "type": "number"
         },
         "specular": {
+          "description": "Shiny multiplier",
           "type": "number"
         },
         "reflectivity": {
+          "description": "Between 0 and 1. Reflectivity + transparency should not exceed 1.0",
           "type": "number"
         },
         "transparency": {
+          "description": "Between 0 and 1. Reflectivity + transparency should not exceed 1.0",
           "type": "number"
         },
         "ior": {
+          "description": "index of refraction",
           "type": "number"
         }
       },

@@ -33,3 +33,7 @@ cargo run -- --scene scene02.json --size 800x600
 ## Scene graph spec
 See `schema.json` and example scene `scene01.json`.
 
+
+## Examples
+Primitives
+![Primitives example](examples/primitives.png)

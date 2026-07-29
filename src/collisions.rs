@@ -625,10 +625,6 @@ pub fn intersect_unit_torus(
 
     let roots = solve_quartic(c4, c3, c2, c1, c0);
 
-    if roots.len() > 0 {
-        println!("roots: {:?}", roots);
-    }
-
     let best_t = roots
         .into_iter()
         .filter(|t| t.is_finite() && *t > EPS)
