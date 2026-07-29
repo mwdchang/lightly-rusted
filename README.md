@@ -35,15 +35,15 @@ See `schema.json` and example scene `scene01.json`.
 
 
 ## Examples
-[Primitive](examples/primitives.json)
+[Primitives](examples/primitives.json)
 
 <img src="examples/primitives.png" alt="Primitives example" width="50%">
 
 
-[Texturing](examples/texture.json)
+[Texturing](examples/textures.json)
 
 <img src="examples/textures.png" alt="Texturing example" width="50%">
 
-[Obj and Refraction](examples/obj.json)
+[Obj model and Refraction](examples/obj.json)
 
 <img src="examples/obj.png" alt="Texturing example" width="50%">
