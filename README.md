@@ -1,11 +1,14 @@
 # lightly-rusted
 lightly-rusted is a small raytracer that leverages a scene graph in JSON format.
 
-lightly-rusted is written in Rust as demo project for me to learn the language. The code should be pretty easy to understand (though far from optimized) for people that want to start exploring raytracing, the main gist resides in the `intersect` function.
+lightly-rusted is written in Rust as demo project for me to learn the language. The code should be pretty easy to understand (though far from optimized) for people that want to start exploring raytracing. The main gist resides in the `intersect` function in `src/main.rs` which fires the primary ray.
+
 
 
 ## Running 
-This will create a `render-result.png`.
+This will create a `render-result.png` file.
+
+Available options are `--workers`, `--scene`, and `--size`.
 
 ```
 # Use all defaults (scene01.json)
@@ -17,8 +20,12 @@ cargo run -- --scene scene02.json
 # Custom size only
 cargo run -- --size 1920x1080
 
-# Both
-cargo run -- --scene scene02.json --size 800x600
+# Both scene and size
+cargo run -- --scene examples/primitives.json --size 800x600
+
+
+# Use worker 6 worker threads
+cargo run -- --scene examples/primitives.json --workers 6
 ```
 
 ## Features
