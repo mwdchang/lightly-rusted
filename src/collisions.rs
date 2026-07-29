@@ -747,35 +747,48 @@ pub fn sphere_uv(p: Vector3<f32>) -> (f32, f32) {
     (u, v)
 }
 
-
 pub fn cube_uv(hit: Vector3<f32>, normal: Vector3<f32>) -> (f32, f32) {
     let (u, v) = if normal.x > 0.5 {
         // +X
-        ( hit.z + 0.5,
-          hit.y + 0.5 )
+        (
+            (hit.z + 1.0) * 0.5,
+            (hit.y + 1.0) * 0.5,
+        )
     } else if normal.x < -0.5 {
         // -X
-        ( 0.5 - hit.z,
-          hit.y + 0.5 )
+        (
+            (1.0 - hit.z) * 0.5,
+            (hit.y + 1.0) * 0.5,
+        )
     } else if normal.y > 0.5 {
         // +Y
-        ( hit.x + 0.5,
-          0.5 - hit.z )
+        (
+            (hit.x + 1.0) * 0.5,
+            (1.0 - hit.z) * 0.5,
+        )
     } else if normal.y < -0.5 {
         // -Y
-        ( hit.x + 0.5,
-          hit.z + 0.5 )
+        (
+            (hit.x + 1.0) * 0.5,
+            (hit.z + 1.0) * 0.5,
+        )
     } else if normal.z > 0.5 {
         // +Z
-        ( hit.x + 0.5,
-          hit.y + 0.5 )
+        (
+            (hit.x + 1.0) * 0.5,
+            (hit.y + 1.0) * 0.5,
+        )
     } else {
         // -Z
-        ( 0.5 - hit.x,
-          hit.y + 0.5 )
+        (
+            (1.0 - hit.x) * 0.5,
+            (hit.y + 1.0) * 0.5,
+        )
     };
+
     (u, v)
 }
+
 
 
 #[allow(non_snake_case)]

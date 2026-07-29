@@ -36,4 +36,9 @@ See `schema.json` and example scene `scene01.json`.
 
 ## Examples
 Primitives
+
 <img src="examples/primitives.png" alt="Primitives example" width="50%">
+
+Textures
+
+<img src="examples/textures.png" alt="Texturing example" width="50%">
