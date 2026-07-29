@@ -1,0 +1,167 @@
+{
+  "description": "Object scene",
+  "environment": {
+    "background": [0.5, 0.5, 0.5],
+    "ambient_light": [0.1, 0.1, 0.1],
+    "camera_position": [0, 5, 10],
+    "camera_target": [0, 2, -6],
+    "shadows": true,
+    "reflections": true,
+    "refractions": true,
+    "secondary_ray_eps": 0.008
+  },
+  "point_lights": [
+    {
+      "position": [5, 15, 15],
+      "intensity": [1200.0, 1200.0, 1200.0]
+    }
+  ],
+  "materials": [
+    {
+      "albedo": [0.7, 0.7, 0.7],
+      "shine": 2000,
+      "specular": 0.2,
+      "reflectivity": 0.3,
+      "transparency": 0.0,
+      "ior": 1
+    },
+    {
+      "albedo": [0.8, 0.8, 0.8],
+      "shine": 0,
+      "specular": 0.0,
+      "reflectivity": 0.0,
+      "transparency": 0.7,
+      "ior": 1.09
+    },
+    {
+      "albedo": [0.0, 1.0, 0.0],
+      "shine": 0,
+      "specular": 0.0,
+      "reflectivity": 0.1,
+      "transparency": 0.0,
+      "ior": 1
+    },
+    {
+      "albedo": [0.8, 0.8, 0.0],
+      "shine": 0,
+      "specular": 0.0,
+      "reflectivity": 0.0,
+      "transparency": 0.7,
+      "ior": 0.92
+    }
+  ],
+  "root": {
+    "children": [
+      {
+        "transforms": [
+          { "type": "scale", "value": [2.0, 2.0, 2.0] },
+          { "type": "translate", "value": [0, 0, -6] }
+        ],
+        "children": [
+          {
+            "mesh_id": "teapot",
+            "material_id": 1
+          }
+        ]
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [4.0, 1.0, 0.5] },
+          { "type": "rotate_x", "value": [0.3] },
+          { "type": "translate", "value": [0, 5, -6] }
+        ],
+        "children": [
+          {
+            "mesh_id": "cube",
+            "material_id": 3
+          }
+        ]
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [1.0, 14.0, 1.0] },
+          { "type": "translate", "value": [0, 0, -20] }
+        ],
+        "children": [
+          {
+            "mesh_id": "cylinder",
+            "material_id": 2
+          }
+        ]
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [1.0, 14.0, 1.0] },
+          { "type": "translate", "value": [-2.5, -2, -20] }
+        ],
+        "children": [
+          {
+            "mesh_id": "cylinder",
+            "material_id": 2
+          }
+        ]
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [1.0, 14.0, 1.0] },
+          { "type": "translate", "value": [2.5, 2, -20] }
+        ],
+        "children": [
+          {
+            "mesh_id": "cylinder",
+            "material_id": 2
+          }
+        ]
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [1.0, 14.0, 1.0] },
+          { "type": "translate", "value": [5, 4, -20] }
+        ],
+        "children": [
+          {
+            "mesh_id": "cylinder",
+            "material_id": 2
+          }
+        ]
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [1.0, 14.0, 1.0] },
+          { "type": "translate", "value": [-5, -4, -20] }
+        ],
+        "children": [
+          {
+            "mesh_id": "cylinder",
+            "material_id": 2
+          }
+        ]
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [1.0, 14.0, 1.0] },
+          { "type": "translate", "value": [7.5, 6, -20] }
+        ],
+        "children": [
+          {
+            "mesh_id": "cylinder",
+            "material_id": 2
+          }
+        ]
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [1.0, 14.0, 1.0] },
+          { "type": "translate", "value": [-7.5, -6, -20] }
+        ],
+        "children": [
+          {
+            "mesh_id": "cylinder",
+            "material_id": 2
+          }
+        ]
+      }
+
+    ]
+  }
+}
