@@ -1,5 +1,7 @@
 use nalgebra::Vector3;
 use nalgebra::Vector2;
+use nalgebra::{DMatrix, linalg::Schur};
+
 
 use crate::obj::{ObjModel, Triangle};
 use roots::{find_roots_quartic, Roots};
@@ -200,6 +202,150 @@ pub fn intersect_unit_cone(
 }
 
 
+pub fn intersect_unit_cylinder(
+    origin: Vector3<f32>,
+    dir: Vector3<f32>,
+) -> Option<IntersectResult> {
+    let mut closest: Option<IntersectResult> = None;
+
+    // ---- Cylinder side ----
+    //
+    // x^2 + z^2 = 1
+    //
+    let a = dir.x * dir.x + dir.z * dir.z;
+
+    let b = 2.0 * (
+        origin.x * dir.x +
+        origin.z * dir.z
+    );
+
+    let c = origin.x * origin.x +
+        origin.z * origin.z -
+        1.0;
+
+    let disc = b * b - 4.0 * a * c;
+
+    if disc >= 0.0 && a.abs() > 1e-6 {
+        let sqrt_disc = disc.sqrt();
+
+        let t0 = (-b - sqrt_disc) / (2.0 * a);
+        let t1 = (-b + sqrt_disc) / (2.0 * a);
+
+        for t in [t0, t1] {
+            if t <= 0.0 {
+                continue;
+            }
+
+            let hit = origin + dir * t;
+
+            // Finite cylinder bounds
+            if hit.y < -1.0 || hit.y > 1.0 {
+                continue;
+            }
+
+            let mut normal = Vector3::new(
+                hit.x,
+                0.0,
+                hit.z,
+            )
+            .normalize();
+
+            let front_face = dir.dot(&normal) < 0.0;
+
+            if !front_face {
+                normal = -normal;
+            }
+
+            let theta = hit.z.atan2(hit.x);
+            let u = 0.5 + theta / (2.0 * std::f32::consts::PI);
+            let v = (hit.y + 1.0) * 0.5;
+
+            let result = IntersectResult {
+                t,
+                hit_point: hit,
+                normal,
+                front_face,
+                uv: Vector2::new(u, v),
+            };
+
+            if closest.is_none() || t < closest.as_ref().unwrap().t {
+                closest = Some(result);
+            }
+        }
+    }
+
+    // ---- Bottom disk (y = -1) ----
+    if dir.y.abs() > 1e-6 {
+        let t = (-1.0 - origin.y) / dir.y;
+
+        if t > 0.0 {
+            let hit = origin + dir * t;
+
+            if hit.x * hit.x + hit.z * hit.z <= 1.0 {
+                let mut normal = Vector3::new(0.0, -1.0, 0.0);
+
+                let front_face = dir.dot(&normal) < 0.0;
+
+                if !front_face {
+                    normal = -normal;
+                }
+
+                let u = hit.x * 0.5 + 0.5;
+                let v = hit.z * 0.5 + 0.5;
+
+                let result = IntersectResult {
+                    t,
+                    hit_point: hit,
+                    normal,
+                    front_face,
+                    uv: Vector2::new(u, v),
+                };
+
+                if closest.is_none() || t < closest.as_ref().unwrap().t {
+                    closest = Some(result);
+                }
+            }
+        }
+    }
+
+    // ---- Top disk (y = 1) ----
+    if dir.y.abs() > 1e-6 {
+        let t = (1.0 - origin.y) / dir.y;
+
+        if t > 0.0 {
+            let hit = origin + dir * t;
+
+            if hit.x * hit.x + hit.z * hit.z <= 1.0 {
+                let mut normal = Vector3::new(0.0, 1.0, 0.0);
+
+                let front_face = dir.dot(&normal) < 0.0;
+
+                if !front_face {
+                    normal = -normal;
+                }
+
+                let u = hit.x * 0.5 + 0.5;
+                let v = hit.z * 0.5 + 0.5;
+
+                let result = IntersectResult {
+                    t,
+                    hit_point: hit,
+                    normal,
+                    front_face,
+                    uv: Vector2::new(u, v),
+                };
+
+                if closest.is_none() || t < closest.as_ref().unwrap().t {
+                    closest = Some(result);
+                }
+            }
+        }
+    }
+
+    closest
+}
+
+
 /**
  * Generated: slab intersection algorithm
 **/
@@ -209,8 +355,12 @@ pub fn intersect_unit_cube(
 ) -> Option<IntersectResult> {
     const EPSILON: f32 = 1e-6;
 
-    let bounds_min = Vector3::new(-0.5, -0.5, -0.5);
-    let bounds_max = Vector3::new( 0.5,  0.5,  0.5);
+    // let bounds_min = Vector3::new(-0.5, -0.5, -0.5);
+    // let bounds_max = Vector3::new( 0.5,  0.5,  0.5);
+
+    let bounds_min = Vector3::new(-1.0, -1.0, -1.0);
+    let bounds_max = Vector3::new( 1.0,  1.0,  1.0);
+
 
     let mut tmin = f32::NEG_INFINITY;
     let mut tmax = f32::INFINITY;
@@ -377,7 +527,7 @@ pub fn intersect_model(
 
 
 
-fn solve_quartic(
+fn solve_quartic_old(
     a: f64,
     b: f64,
     c: f64,
@@ -393,22 +543,145 @@ fn solve_quartic(
     }
 }
 
+fn solve_quartic(
+    a: f64,
+    b: f64,
+    c: f64,
+    d: f64,
+    e: f64,
+) -> Vec<f64> {
+    if a.abs() < 1e-14 {
+        return vec![];
+    }
+
+    // Normalize polynomial:
+    // x^4 + Bx^3 + Cx^2 + Dx + E
+    let b = b / a;
+    let c = c / a;
+    let d = d / a;
+    let e = e / a;
+
+    // Companion matrix:
+    //
+    // [ 0  0  0 -E ]
+    // [ 1  0  0 -D ]
+    // [ 0  1  0 -C ]
+    // [ 0  0  1 -B ]
+    //
+    let mut m = DMatrix::<f64>::zeros(4, 4);
+
+    m[(0, 3)] = -e;
+    m[(1, 3)] = -d;
+    m[(2, 3)] = -c;
+    m[(3, 3)] = -b;
+
+    m[(1, 0)] = 1.0;
+    m[(2, 1)] = 1.0;
+    m[(3, 2)] = 1.0;
+
+    let schur = Schur::new(m);
+    let eigenvalues = schur.complex_eigenvalues();
+
+    eigenvalues
+        .iter()
+        .filter_map(|z| {
+            if z.im.abs() < 1e-10 {
+                Some(z.re)
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
 
 pub fn intersect_unit_torus(
     origin: Vector3<f32>,
     dir: Vector3<f32>,
 ) -> Option<IntersectResult> {
+    const R: f64 = 0.75;
+    const r: f64 = 0.25;
+    const EPS: f64 = 1e-5;
+
+    // Convert once to f64.
+    let origin64 = origin.map(|x| x as f64);
+    let dir64 = dir.map(|x| x as f64);
+
+    let g = dir64.dot(&dir64);
+    let h = 2.0 * origin64.dot(&dir64);
+    let i = origin64.dot(&origin64);
+
+    let j = dir64.x * dir64.x + dir64.y * dir64.y;
+    let k = 2.0 * (origin64.x * dir64.x + origin64.y * dir64.y);
+    let l = origin64.x * origin64.x + origin64.y * origin64.y;
+
+    let s = R * R - r * r;
+
+    let c4 = g * g;
+    let c3 = 2.0 * g * h;
+    let c2 = h * h + 2.0 * g * (i + s) - 4.0 * R * R * j;
+    let c1 = 2.0 * h * (i + s) - 4.0 * R * R * k;
+    let c0 = (i + s) * (i + s) - 4.0 * R * R * l;
+
+    let roots = solve_quartic(c4, c3, c2, c1, c0);
+
+    if roots.len() > 0 {
+        println!("roots: {:?}", roots);
+    }
+
+    let best_t = roots
+        .into_iter()
+        .filter(|t| t.is_finite() && *t > EPS)
+        .min_by(|a, b| a.partial_cmp(b).unwrap())?;
+
+    let hit64 = origin64 + dir64 * best_t;
+
+    let sum = hit64.dot(&hit64) + R * R - r * r;
+
+    let normal64 = Vector3::new(
+        4.0 * hit64.x * (sum - 2.0 * R * R),
+        4.0 * hit64.y * (sum - 2.0 * R * R),
+        4.0 * hit64.z * sum,
+    );
+
+    if normal64.norm_squared() < 1e-20 {
+        return None;
+    }
+
+    let normal64 = normal64.normalize();
+
+    // Convert back to f32 for the renderer.
+    let hit = hit64.map(|x| x as f32);
+    let normal = normal64.map(|x| x as f32);
+
+    let (u, v) = torus_uv(hit, R as f32);
+
+    Some(IntersectResult {
+        t: best_t as f32,
+        hit_point: hit,
+        normal,
+        front_face: dir.dot(&normal) < 0.0,
+        uv: Vector2::new(u, v),
+    })
+}
+
+
+/*
+pub fn intersect_unit_torus(
+    origin: Vector3<f32>,
+    dir: Vector3<f32>,
+) -> Option<IntersectResult> {
     #[allow(non_snake_case)]
-    let R: f32 = 0.75;
-    let r: f32 = 0.25;
+    let R: f64 = 0.75;
+    let r: f64 = 0.25;
 
-    let g = dir.dot(&dir);
-    let h = 2.0 * origin.dot(&dir);
-    let i = origin.dot(&origin);
+    let g = dir.dot(&dir) as f64;
+    let h = 2.0 * origin.dot(&dir) as f64;
+    let i = origin.dot(&origin) as f64;
 
-    let j = dir.x * dir.x + dir.y * dir.y;
-    let k = 2.0 * (origin.x * dir.x + origin.y * dir.y);
-    let l = origin.x * origin.x + origin.y * origin.y;
+    let j = (dir.x * dir.x + dir.y * dir.y) as f64;
+    let k = (2.0 * (origin.x * dir.x + origin.y * dir.y)) as f64;
+    let l = (origin.x * origin.x + origin.y * origin.y) as f64;
 
     let s = R * R - r * r;
 
@@ -428,7 +701,7 @@ pub fn intersect_unit_torus(
 
     let mut best_t = f64::INFINITY;
     // const EPS: f64 = 1e-3;
-    const EPS: f64 = 0.012;
+    const EPS: f64 = 0.002;
     
     for t in roots {
         if t > EPS && t < best_t {
@@ -442,12 +715,12 @@ pub fn intersect_unit_torus(
 
     let hit = origin + dir * best_t as f32;
 
-    let sum = hit.dot(&hit) + R * R - r * r;
+    let sum = (hit.dot(&hit) as f64) + R * R - r * r;
 
     let n = Vector3::new(
-        4.0 * hit.x * (sum - 2.0 * R * R),
-        4.0 * hit.y * (sum - 2.0 * R * R),
-        4.0 * hit.z * sum,
+        4.0 * hit.x * (sum - 2.0 * R * R) as f32,
+        4.0 * hit.y * (sum - 2.0 * R * R) as f32,
+        4.0 * hit.z * sum as f32,
     );
 
     let normal = if n.norm_squared() > 1e-12 {
@@ -456,7 +729,7 @@ pub fn intersect_unit_torus(
         Vector3::zeros()
     };
 
-    let (u, v) = torus_uv(hit, R);
+    let (u, v) = torus_uv(hit, R as f32);
     Some(IntersectResult {
         t: (best_t as f32),
         hit_point: hit,
@@ -465,6 +738,7 @@ pub fn intersect_unit_torus(
         uv: Vector2::new(u, v)
     })
 }
+*/
 
 
 use std::f32::consts::PI;

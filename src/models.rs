@@ -121,7 +121,7 @@ impl Node {
         self.children.push(child);
         if !self.children.is_empty() {
             for child in &mut self.children {
-                child.set_world_transform(self.transform_local * self.transform_world);
+                child.set_world_transform(self.transform_world * self.transform_local);
             }
         }
     }
@@ -129,15 +129,15 @@ impl Node {
     pub fn set_transform(&mut self, transform: Matrix4<f32>) {
         self.transform_local = transform; 
         let inv = (
-            self.transform_local *
-            self.transform_world
+            self.transform_world *
+            self.transform_local
         ).try_inverse().unwrap();
         self.transform_inverse = inv;
 
 
         if !self.children.is_empty() {
             for child in &mut self.children {
-                child.set_world_transform(self.transform_local * self.transform_world);
+                child.set_world_transform(self.transform_world * self.transform_local);
             }
         }
     }
@@ -145,14 +145,14 @@ impl Node {
     pub fn set_world_transform(&mut self, transform: Matrix4<f32>) {
         self.transform_world = transform; 
         let inv = (
-            self.transform_local *
-            self.transform_world
+            self.transform_world *
+            self.transform_local
         ).try_inverse().unwrap();
         self.transform_inverse = inv;
 
         if !self.children.is_empty() {
             for child in &mut self.children {
-                child.set_world_transform(self.transform_local * self.transform_world);
+                child.set_world_transform(self.transform_world * self.transform_local);
             }
         }
     }

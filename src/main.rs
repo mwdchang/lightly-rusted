@@ -16,6 +16,7 @@ mod collisions;
 use collisions::intersect_unit_torus;
 use collisions::intersect_unit_sphere;
 use collisions::intersect_unit_cone;
+use collisions::intersect_unit_cylinder;
 use collisions::intersect_unit_cube;
 use collisions::intersect_model;
 use collisions::HitRecord;
@@ -75,6 +76,8 @@ fn intersect(
             intersect_unit_sphere(n_ray.origin, n_ray.direction)
         } else if mesh_id == Some("cone") {
             intersect_unit_cone(n_ray.origin, n_ray.direction)
+        } else if mesh_id == Some("cylinder") {
+            intersect_unit_cylinder(n_ray.origin, n_ray.direction)
         } else if mesh_id == Some("cube") {
             intersect_unit_cube(n_ray.origin, n_ray.direction)
         } else if mesh_id == Some("torus") {
@@ -137,6 +140,7 @@ fn intersect(
 
     let mut contribution: Vector3<f32> = Vector3::zeros();
     let mut specular: Vector3<f32> = Vector3::zeros();
+
     let hit = hits
         .iter()
         .filter(|h| h.t > 0.001)
@@ -427,6 +431,21 @@ fn render(
 }
 
 
+use crate::utils::translate;
+use crate::utils::rotate_y;
+
+/*
+fn main() {
+    let root = translate(Vector3::new(0.0, 0.0, 2.0));
+    let child1 = rotate_y(1.0);
+    let child2 = translate(Vector3::new(-4.0, 0.0, 0.0));
+
+
+    println!("{}", child2 * child1);
+}
+*/
+
+
 fn main() {
     let args = Args::parse();
     let mut scene = read_scene(&args.scene_file);
@@ -497,4 +516,5 @@ fn main() {
     image.save("render-result.png").expect("Failed to save PNG");
     println!("Rendered {}x{} image", args.width, args.height);
 }
+
 
