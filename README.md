@@ -54,3 +54,7 @@ See `schema.json` and example scene `scene01.json`.
 [Obj model and Refraction](examples/obj.json)
 
 <img src="examples/obj.png" alt="Texturing example" width="50%">
+
+[CSG](examples/csg.json)
+
+<img src="examples/csg.png" alt="CSG example" width="50%">

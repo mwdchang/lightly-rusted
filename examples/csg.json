@@ -1,0 +1,114 @@
+{
+  "description": "CSG example",
+  "environment": {
+    "background": [0, 0.0, 0],
+    "ambient_light": [0.2, 0.2, 0.2],
+    "camera_position": [0, 0, 10],
+    "camera_target": [0, 0, 0],
+    "shadows": false,
+    "reflections": true,
+    "refractions": false,
+    "secondary_ray_eps": 0.0275
+  },
+  "point_lights": [
+    {
+      "position": [0, 50, 0],
+      "intensity": [2500.0, 2500.0, 2500.0]
+    },
+    {
+      "position": [0, 0, 30],
+      "intensity": [500.0, 500.0, 500.0]
+    }
+
+  ],
+  "materials": [
+    {
+      "albedo": [0.6, 0.6, 0.6],
+      "shine": 5000,
+      "specular": 0.01,
+      "reflectivity": 0.5,
+      "transparency": 0.0,
+      "ior": 1
+    },
+    {
+      "albedo": [1.0, 0.0, 0.0],
+      "shine": 500.0,
+      "specular": 0.5,
+      "reflectivity": 0.3,
+      "transparency": 0.0,
+      "ior": 1
+    },
+    {
+      "albedo": [0.0, 1.0, 0.0],
+      "shine": 100.0,
+      "specular": 0.0,
+      "reflectivity": 0.0,
+      "transparency": 0.0,
+      "ior": 1
+    }
+  ],
+  "root": {
+    "children": [
+      {
+        "transforms": [
+          { "type": "scale", "value": [50.0, 0.05, 50.0] },
+          { "type": "translate", "value": [0, -4, 0] }
+        ],
+        "children": [
+          {
+            "mesh_id": "cube",
+            "material_id": 0
+          }
+        ]
+      },
+      {
+        "type": "csg_difference",
+        "transforms": [
+          { "type": "rotate_x", "value": [1] },
+          { "type": "rotate_y", "value": [1] },
+          { "type": "translate", "value": [-4.0, 0.0, -2.0] }
+        ],
+        "children": [
+          {
+            "transforms": [
+              { "type": "scale", "value": [2.0, 2.0, 2.0] }
+            ],
+            "mesh_id": "cube",
+            "material_id": 1
+          },
+          {
+            "transforms": [
+              { "type": "scale", "value": [2.3, 2.3, 2.3] }
+            ],
+            "mesh_id": "sphere",
+            "material_id": 2
+          }
+        ]
+      },
+      {
+        "type": "csg_difference",
+        "transforms": [
+          { "type": "rotate_x", "value": [0.25] },
+          { "type": "rotate_y", "value": [-0.55] },
+          { "type": "translate", "value": [4.0, 0.0, -2.0] }
+        ],
+        "children": [
+          {
+            "transforms": [
+              { "type": "scale", "value": [2.5, 2.5, 2.5] }
+            ],
+            "mesh_id": "sphere",
+            "material_id": 2
+          },
+          {
+            "transforms": [
+              { "type": "scale", "value": [2.0, 2.0, 2.0] }
+            ],
+            "mesh_id": "cube",
+            "material_id": 1
+          }
+        ]
+      }
+    ]
+  }
+}
