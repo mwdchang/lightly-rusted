@@ -322,7 +322,6 @@ fn intersect(
             intersect_csg_difference(node, ray, hits);
             return;
         }
-        // println!("{:?}", node.get_transform_world());
         
         // Transform ray to local coordinate space
         let inv = node.get_transform_inverse();
@@ -398,7 +397,6 @@ fn intersect(
     visit(scene.get_root(), ray, &mut hits, &scene.model_cache);
 
     if hits.is_empty() {
-        // return Vector3::new(0.0, 0.0, 0.0)
         return scene.environment.background;
     }
 
@@ -461,7 +459,7 @@ fn intersect(
         let distance = to_light.norm();
         let light_dir = to_light / distance;
 
-        // Used to be 1.0, just making things look nice
+        // Just making things look nice
         let attenuation = 1.0 / (distance * distance);
         let ndotl = hit.normal.dot(&light_dir).max(0.0);
 
@@ -584,9 +582,6 @@ fn intersect(
     return (1.0 - reflectivity - transparency) * local_contrib +
         reflectivity * reflect_contrib +
         transparency * refract_contrib;
-
-    // return contribution + specular + scene.environment.ambient_light; 
-    // println!("({}):{} ==>  {}", depth, ray.direction, reflect_ray.direction);
 }
 
 
@@ -657,7 +652,6 @@ fn render_patch(
             });
         }
     }
-
     println!("patch {}/{}", patch_idx + 1, total_patches);
 
     return pixels;
@@ -684,16 +678,11 @@ fn render(
         .map(|(patch_idx, patch)| render_patch(patches.len(), patch_idx, patch, width, height, camera, scene))
         .collect();
 
-    // let mut cnt: u32 = 0;
-    // let num_patches = patch_results.len() as u32;
-
     println!("Assemble patches...");
     for pixels in patch_results {
-        // cnt += 1;
         for pixel in pixels {
             image.put_pixel(pixel.x, pixel.y, pixel.color);
         }
-        // println!("Done {}/{}", cnt, num_patches);
     }
     image
 }
