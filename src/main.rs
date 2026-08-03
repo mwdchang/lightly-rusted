@@ -424,11 +424,15 @@ fn intersect(
             let mut shadow_hits:Vec<HitRecord> = vec![];
             visit(scene.get_root(), &shadow_ray, &mut shadow_hits, &scene.model_cache);
 
+            // Filter out self-intersections/negative t, and sort by t
+            shadow_hits.retain(|h| h.t > 0.001);
+            shadow_hits.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
+
             let dist_to_light = to_light.norm();
 
             for shadow_hit in shadow_hits {
                 if shadow_hit.t > dist_to_light {
-                    break; // hit is behind the light
+                    break; // hit is behind the light (all subsequent hits will also be behind since they are sorted)
                 }
 
                 let s_material = scene.get_materials().get(shadow_hit.material_id as usize).unwrap();
