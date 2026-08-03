@@ -543,7 +543,7 @@ fn solve_quartic_old(
     }
 }
 
-fn solve_quartic(
+pub fn solve_quartic(
     a: f64,
     b: f64,
     c: f64,

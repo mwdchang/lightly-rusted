@@ -3,6 +3,8 @@ use image::{Rgb, RgbImage};
 use nalgebra::Point3;
 use nalgebra::Vector3;
 
+use nalgebra::Vector2;
+
 mod camera;
 use camera::Camera;
 use camera::Ray;
@@ -11,6 +13,7 @@ mod models;
 use models::Scene;
 use models::Node;
 use models::read_scene;
+use models::NodeKind;
 
 mod collisions;
 use collisions::intersect_unit_torus;
@@ -20,6 +23,16 @@ use collisions::intersect_unit_cylinder;
 use collisions::intersect_unit_cube;
 use collisions::intersect_model;
 use collisions::HitRecord;
+
+mod collisions_all;
+use collisions_all::{
+    IntersectInterval,
+    intersect_all_unit_sphere,
+    intersect_all_unit_cube,
+    intersect_all_unit_cylinder,
+    intersect_all_unit_cone,
+    intersect_all_unit_torus,
+};
 
 mod utils;
 
@@ -45,10 +58,251 @@ end, { desc = "Format file" })
 **/
 
 
-/** 
-* typical:
-* world_transform = translation * rotation * scale
-**/
+struct WorldIntersectInterval {
+    t_enter: f32,
+    t_exit: f32,
+    point_enter: Vector3<f32>,
+    point_exit: Vector3<f32>,
+    normal_enter: Vector3<f32>,
+    normal_exit: Vector3<f32>,
+    uv_enter: Vector2<f32>,
+    uv_exit: Vector2<f32>,
+    material_id_enter: u32,
+    material_id_exit: u32,
+}
+
+fn get_primitive_interval(
+    node: &Node,
+    ray: &Ray,
+) -> Option<WorldIntersectInterval> {
+    let inv = node.get_transform_inverse();
+    let local_ray = Ray {
+        direction: inv.transform_vector(&ray.direction).normalize(),
+        origin: inv.transform_point(&Point3::from(ray.origin)).coords,
+    };
+
+    let mesh_id = node.get_mesh_id().as_deref()?;
+    let local_interval = if mesh_id == "sphere" {
+        intersect_all_unit_sphere(local_ray.origin, local_ray.direction)
+    } else if mesh_id == "cone" {
+        intersect_all_unit_cone(local_ray.origin, local_ray.direction)
+    } else if mesh_id == "cylinder" {
+        intersect_all_unit_cylinder(local_ray.origin, local_ray.direction)
+    } else if mesh_id == "cube" {
+        intersect_all_unit_cube(local_ray.origin, local_ray.direction)
+    } else if mesh_id == "torus" {
+        intersect_all_unit_torus(local_ray.origin, local_ray.direction)
+    } else {
+        None
+    }?;
+
+    let point_enter_local = local_ray.origin + local_ray.direction * local_interval.t_enter;
+    let point_exit_local = local_ray.origin + local_ray.direction * local_interval.t_exit;
+
+    // Transform points to world space
+    let transform = node.get_transform_world() * node.get_transform_local();
+    let point_enter = (transform * point_enter_local.push(1.0)).xyz();
+    let point_exit = (transform * point_exit_local.push(1.0)).xyz();
+
+    // Transform normals to world space using inverse transpose
+    let normal_enter = (inv.transpose() * local_interval.normal_enter.push(0.0)).xyz().normalize();
+    let normal_exit = (inv.transpose() * local_interval.normal_exit.push(0.0)).xyz().normalize();
+
+    // Calculate world t values
+    let mut t_enter = (point_enter - ray.origin).dot(&ray.direction);
+    let mut t_exit = (point_exit - ray.origin).dot(&ray.direction);
+
+    // If for some reason transforms swapped the entry/exit order, swap them
+    let (p_enter, p_exit, n_enter, n_exit, uv_e, uv_x) = if t_enter <= t_exit {
+        (point_enter, point_exit, normal_enter, normal_exit, local_interval.uv_enter, local_interval.uv_exit)
+    } else {
+        std::mem::swap(&mut t_enter, &mut t_exit);
+        (point_exit, point_enter, normal_exit, normal_enter, local_interval.uv_exit, local_interval.uv_enter)
+    };
+
+    Some(WorldIntersectInterval {
+        t_enter,
+        t_exit,
+        point_enter: p_enter,
+        point_exit: p_exit,
+        normal_enter: n_enter,
+        normal_exit: n_exit,
+        uv_enter: uv_e,
+        uv_exit: uv_x,
+        material_id_enter: node.get_material_id(),
+        material_id_exit: node.get_material_id(),
+    })
+}
+
+fn make_csg_hit(
+    t: f32,
+    point: Vector3<f32>,
+    outward_normal: Vector3<f32>,
+    uv: Vector2<f32>,
+    material_id: u32,
+    ray_dir: &Vector3<f32>,
+) -> HitRecord {
+    let front_face = ray_dir.dot(&outward_normal) < 0.0;
+    let normal = if front_face {
+        outward_normal
+    } else {
+        -outward_normal
+    };
+
+    HitRecord {
+        t,
+        point,
+        normal,
+        material_id,
+        front_face,
+        uv,
+    }
+}
+
+fn intersect_csg_difference(
+    node: &Node,
+    ray: &Ray,
+    hits: &mut Vec<HitRecord>,
+) {
+    let children = node.get_children();
+    if children.len() < 2 {
+        return;
+    }
+    let child_a = &children[0];
+    let child_b = &children[1];
+
+    let interval_a = match get_primitive_interval(child_a, ray) {
+        Some(i) => i,
+        None => return,
+    };
+    let interval_b = get_primitive_interval(child_b, ray);
+
+    let tA_enter = interval_a.t_enter;
+    let tA_exit = interval_a.t_exit;
+
+    if let Some(i_b) = interval_b {
+        let tB_enter = i_b.t_enter;
+        let tB_exit = i_b.t_exit;
+
+        // Case 1: No overlap
+        if tB_exit <= tA_enter || tB_enter >= tA_exit {
+            hits.push(make_csg_hit(
+                tA_enter, 
+                interval_a.point_enter, 
+                interval_a.normal_enter, 
+                interval_a.uv_enter, 
+                interval_a.material_id_enter, 
+                &ray.direction)
+            );
+            hits.push(make_csg_hit(
+                tA_exit, 
+                interval_a.point_exit, 
+                interval_a.normal_exit, 
+                interval_a.uv_exit, 
+                interval_a.material_id_exit, 
+                &ray.direction)
+            );
+        }
+        // Case 2: B completely covers A
+        else if tB_enter <= tA_enter && tB_exit >= tA_exit {
+            // No hits
+        }
+        // Case 3: B covers start of A
+        else if tB_enter <= tA_enter && tB_exit > tA_enter && tB_exit < tA_exit {
+            // Remaining interval is [tB_exit, tA_exit]
+            hits.push(make_csg_hit(
+                tB_exit, 
+                i_b.point_exit, 
+                -i_b.normal_exit, 
+                i_b.uv_exit, 
+                i_b.material_id_exit, 
+                &ray.direction)
+            );
+            hits.push(make_csg_hit(
+                tA_exit, 
+                interval_a.point_exit, 
+                interval_a.normal_exit, 
+                interval_a.uv_exit, 
+                interval_a.material_id_exit, 
+                &ray.direction)
+            );
+        }
+        // Case 4: B covers end of A
+        else if tB_enter > tA_enter && tB_enter < tA_exit && tB_exit >= tA_exit {
+            // Remaining interval is [tA_enter, tB_enter]
+            hits.push(make_csg_hit(
+                tA_enter, 
+                interval_a.point_enter, 
+                interval_a.normal_enter, 
+                interval_a.uv_enter, 
+                interval_a.material_id_enter, 
+                &ray.direction)
+            );
+            hits.push(make_csg_hit(
+                tB_enter, 
+                i_b.point_enter, 
+                -i_b.normal_enter, 
+                i_b.uv_enter, 
+                i_b.material_id_enter, 
+                &ray.direction)
+            );
+        }
+        // Case 5: B is inside A
+        else if tB_enter > tA_enter && tB_exit < tA_exit {
+            // Remaining intervals are [tA_enter, tB_enter] and [tB_exit, tA_exit]
+            hits.push(make_csg_hit(
+                tA_enter, 
+                interval_a.point_enter, 
+                interval_a.normal_enter, 
+                interval_a.uv_enter, 
+                interval_a.material_id_enter, 
+                &ray.direction)
+            );
+            hits.push(make_csg_hit(
+                tB_enter, 
+                i_b.point_enter, 
+                -i_b.normal_enter, 
+                i_b.uv_enter, 
+                i_b.material_id_enter, 
+                &ray.direction)
+            );
+            hits.push(make_csg_hit(
+                tB_exit, 
+                i_b.point_exit, 
+                -i_b.normal_exit, 
+                i_b.uv_exit, 
+                i_b.material_id_exit, 
+                &ray.direction)
+            );
+            hits.push(make_csg_hit(
+                tA_exit, 
+                interval_a.point_exit, 
+                interval_a.normal_exit, 
+                interval_a.uv_exit, 
+                interval_a.material_id_exit, 
+                &ray.direction)
+            );
+        }
+    } else {
+        // B does not hit at all, just return A's interval
+        hits.push(make_csg_hit(
+            tA_enter, 
+            interval_a.point_enter, 
+            interval_a.normal_enter, 
+            interval_a.uv_enter, 
+            interval_a.material_id_enter, 
+            &ray.direction)
+        );
+        hits.push(make_csg_hit(
+            tA_exit, 
+            interval_a.point_exit, 
+            interval_a.normal_exit, 
+            interval_a.uv_exit, 
+            interval_a.material_id_exit, 
+            &ray.direction)
+        );
+    }
+}
 
 fn intersect(
     camera: &Camera, 
@@ -58,6 +312,10 @@ fn intersect(
 ) -> Vector3<f32> {
 
     fn visit(node: &Node, ray: &Ray, hits: &mut Vec<HitRecord>, model_cache: &ModelCache) {
+        if node.get_kind() == &NodeKind::CsgDifference {
+            intersect_csg_difference(node, ray, hits);
+            return;
+        }
         // println!("{:?}", node.get_transform_world());
         
         // Transform ray to local coordinate space
@@ -95,8 +353,8 @@ fn intersect(
         if res.is_some() {
             let r = res.unwrap();
             let w_point = (
-                node.get_transform_local() 
-                * node.get_transform_world()
+                node.get_transform_world()
+                * node.get_transform_local()
                 * r.hit_point.push(1.0)
             ).xyz();
 
