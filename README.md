@@ -38,27 +38,33 @@ cargo build --release
 ```
 
 
-## Running/development 
+## Running lightly-rusted
 This will create a `render-result.png` file.
 
 Available options are `--workers`, `--scene`, and `--size`.
 
 ```
-# Use all defaults (scene01.json)
-cargo run
+# Use all defaults (scene01.json, 400x300, 1 worker)
+./lightly-rusted
 
 # Custom scene only
-cargo run -- --scene scene02.json
+./lightly-rusted -- --scene scene02.json
 
 # Custom size only
-cargo run -- --size 1920x1080
+./lightlh-rusted -- --size 1920x1080
 
 # Both scene and size
-cargo run -- --scene examples/primitives.json --size 800x600
+./lightly-rusted -- --scene examples/primitives.json --size 800x600
+
+# Use custom scene worker 6 worker threads
+./lightly-rusted -- --scene examples/primitives.json --workers 6
+```
 
 
-# Use worker 6 worker threads
-cargo run -- --scene examples/primitives.json --workers 6
+## Development 
+```
+cargo run --release -- <arguments>
+cargo run -- <arguments>
 ```
 
 
