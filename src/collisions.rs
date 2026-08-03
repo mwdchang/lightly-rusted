@@ -4,7 +4,6 @@ use nalgebra::{DMatrix, linalg::Schur};
 
 
 use crate::obj::{ObjModel, Triangle};
-use roots::{find_roots_quartic, Roots};
 
 
 pub struct HitRecord {
@@ -525,23 +524,23 @@ pub fn intersect_model(
 }
 
 
+// use roots::{find_roots_quartic, Roots};
+// fn solve_quartic_old(
+//     a: f64,
+//     b: f64,
+//     c: f64,
+//     d: f64,
+//     e: f64,
+// ) -> Vec<f64> {
+//     match find_roots_quartic(a, b, c, d, e) {
+//         Roots::No(_) => vec![],
+//         Roots::One([x]) => vec![x],
+//         Roots::Two([x0, x1]) => vec![x0, x1],
+//         Roots::Three([x0, x1, x2]) => vec![x0, x1, x2],
+//         Roots::Four([x0, x1, x2, x3]) => vec![x0, x1, x2, x3],
+//     }
+// }
 
-
-fn solve_quartic_old(
-    a: f64,
-    b: f64,
-    c: f64,
-    d: f64,
-    e: f64,
-) -> Vec<f64> {
-    match find_roots_quartic(a, b, c, d, e) {
-        Roots::No(_) => vec![],
-        Roots::One([x]) => vec![x],
-        Roots::Two([x0, x1]) => vec![x0, x1],
-        Roots::Three([x0, x1, x2]) => vec![x0, x1, x2],
-        Roots::Four([x0, x1, x2, x3]) => vec![x0, x1, x2, x3],
-    }
-}
 
 pub fn solve_quartic(
     a: f64,
@@ -599,8 +598,8 @@ pub fn intersect_unit_torus(
     origin: Vector3<f32>,
     dir: Vector3<f32>,
 ) -> Option<IntersectResult> {
-    const R: f64 = 0.75;
-    const r: f64 = 0.25;
+    const MAJOR_R: f64 = 0.75;
+    const MINOR_R: f64 = 0.25;
     const EPS: f64 = 1e-5;
 
     // Convert once to f64.
@@ -615,13 +614,13 @@ pub fn intersect_unit_torus(
     let k = 2.0 * (origin64.x * dir64.x + origin64.y * dir64.y);
     let l = origin64.x * origin64.x + origin64.y * origin64.y;
 
-    let s = R * R - r * r;
+    let s = MAJOR_R * MAJOR_R - MINOR_R * MINOR_R;
 
     let c4 = g * g;
     let c3 = 2.0 * g * h;
-    let c2 = h * h + 2.0 * g * (i + s) - 4.0 * R * R * j;
-    let c1 = 2.0 * h * (i + s) - 4.0 * R * R * k;
-    let c0 = (i + s) * (i + s) - 4.0 * R * R * l;
+    let c2 = h * h + 2.0 * g * (i + s) - 4.0 * MAJOR_R * MAJOR_R * j;
+    let c1 = 2.0 * h * (i + s) - 4.0 * MAJOR_R * MAJOR_R * k;
+    let c0 = (i + s) * (i + s) - 4.0 * MAJOR_R * MAJOR_R * l;
 
     let roots = solve_quartic(c4, c3, c2, c1, c0);
 
@@ -632,11 +631,11 @@ pub fn intersect_unit_torus(
 
     let hit64 = origin64 + dir64 * best_t;
 
-    let sum = hit64.dot(&hit64) + R * R - r * r;
+    let sum = hit64.dot(&hit64) + MAJOR_R * MAJOR_R - MINOR_R * MINOR_R;
 
     let normal64 = Vector3::new(
-        4.0 * hit64.x * (sum - 2.0 * R * R),
-        4.0 * hit64.y * (sum - 2.0 * R * R),
+        4.0 * hit64.x * (sum - 2.0 * MAJOR_R * MAJOR_R),
+        4.0 * hit64.y * (sum - 2.0 * MAJOR_R * MAJOR_R),
         4.0 * hit64.z * sum,
     );
 
@@ -650,7 +649,7 @@ pub fn intersect_unit_torus(
     let hit = hit64.map(|x| x as f32);
     let normal = normal64.map(|x| x as f32);
 
-    let (u, v) = torus_uv(hit, R as f32);
+    let (u, v) = torus_uv(hit, MAJOR_R as f32);
 
     Some(IntersectResult {
         t: best_t as f32,
@@ -660,81 +659,6 @@ pub fn intersect_unit_torus(
         uv: Vector2::new(u, v),
     })
 }
-
-
-/*
-pub fn intersect_unit_torus(
-    origin: Vector3<f32>,
-    dir: Vector3<f32>,
-) -> Option<IntersectResult> {
-    #[allow(non_snake_case)]
-    let R: f64 = 0.75;
-    let r: f64 = 0.25;
-
-    let g = dir.dot(&dir) as f64;
-    let h = 2.0 * origin.dot(&dir) as f64;
-    let i = origin.dot(&origin) as f64;
-
-    let j = (dir.x * dir.x + dir.y * dir.y) as f64;
-    let k = (2.0 * (origin.x * dir.x + origin.y * dir.y)) as f64;
-    let l = (origin.x * origin.x + origin.y * origin.y) as f64;
-
-    let s = R * R - r * r;
-
-    let c4 = g * g;
-    let c3 = 2.0 * g * h;
-    let c2 = h * h + 2.0 * g * (i + s) - 4.0 * R * R * j;
-    let c1 = 2.0 * h * (i + s) - 4.0 * R * R * k;
-    let c0 = (i + s) * (i + s) - 4.0 * R * R * l;
-
-    let roots = solve_quartic(
-        c4 as f64, 
-        c3 as f64, 
-        c2 as f64, 
-        c1 as f64, 
-        c0 as f64
-    );
-
-    let mut best_t = f64::INFINITY;
-    // const EPS: f64 = 1e-3;
-    const EPS: f64 = 0.002;
-    
-    for t in roots {
-        if t > EPS && t < best_t {
-            best_t = t;
-        }
-    }
-
-    if !best_t.is_finite() {
-        return None;
-    }
-
-    let hit = origin + dir * best_t as f32;
-
-    let sum = (hit.dot(&hit) as f64) + R * R - r * r;
-
-    let n = Vector3::new(
-        4.0 * hit.x * (sum - 2.0 * R * R) as f32,
-        4.0 * hit.y * (sum - 2.0 * R * R) as f32,
-        4.0 * hit.z * sum as f32,
-    );
-
-    let normal = if n.norm_squared() > 1e-12 {
-        n.normalize()
-    } else {
-        Vector3::zeros()
-    };
-
-    let (u, v) = torus_uv(hit, R as f32);
-    Some(IntersectResult {
-        t: (best_t as f32),
-        hit_point: hit,
-        normal,
-        front_face: dir.dot(&normal) < 0.0,
-        uv: Vector2::new(u, v)
-    })
-}
-*/
 
 
 use std::f32::consts::PI;

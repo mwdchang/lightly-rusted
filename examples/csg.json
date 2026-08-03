@@ -62,7 +62,7 @@
         ]
       },
       {
-        "type": "csg_difference",
+        "node_type": "csg_difference",
         "transforms": [
           { "type": "rotate_x", "value": [1] },
           { "type": "rotate_y", "value": [1] },
@@ -86,7 +86,7 @@
         ]
       },
       {
-        "type": "csg_difference",
+        "node_type": "csg_difference",
         "transforms": [
           { "type": "rotate_x", "value": [0.25] },
           { "type": "rotate_y", "value": [-0.55] },

@@ -271,7 +271,7 @@ pub fn intersect_all_unit_cone(
 
 /**
  * Returns the full [t_enter, t_exit] interval for a unit torus.
- * Major radius R = 0.75, minor radius r = 0.25, ring lies in the XY plane.
+ * Major radius = 0.75, minor radius = 0.25, ring lies in the XY plane.
  *
  * The quartic can yield up to 4 real roots; the smallest and largest are
  * used as t_enter / t_exit. Roots are NOT filtered by sign, so t_enter may
@@ -282,8 +282,8 @@ pub fn intersect_all_unit_torus(
     origin: Vector3<f32>,
     dir: Vector3<f32>,
 ) -> Option<IntersectInterval> {
-    const R: f64 = 0.75;
-    const r: f64 = 0.25;
+    const MAJOR_R: f64 = 0.75;
+    const MINOR_R: f64 = 0.25;
 
     let origin64 = origin.map(|x| x as f64);
     let dir64    = dir.map(|x| x as f64);
@@ -296,13 +296,13 @@ pub fn intersect_all_unit_torus(
     let k = 2.0 * (origin64.x * dir64.x + origin64.y * dir64.y);
     let l = origin64.x * origin64.x + origin64.y * origin64.y;
 
-    let s = R * R - r * r;
+    let s = MAJOR_R * MAJOR_R - MINOR_R * MINOR_R;
 
     let c4 = g * g;
     let c3 = 2.0 * g * h;
-    let c2 = h * h + 2.0 * g * (i + s) - 4.0 * R * R * j;
-    let c1 = 2.0 * h * (i + s) - 4.0 * R * R * k;
-    let c0 = (i + s) * (i + s) - 4.0 * R * R * l;
+    let c2 = h * h + 2.0 * g * (i + s) - 4.0 * MAJOR_R * MAJOR_R * j;
+    let c1 = 2.0 * h * (i + s) - 4.0 * MAJOR_R * MAJOR_R * k;
+    let c0 = (i + s) * (i + s) - 4.0 * MAJOR_R * MAJOR_R * l;
 
     // All real roots, no positivity filter
     let mut roots = solve_quartic(c4, c3, c2, c1, c0);
@@ -318,10 +318,10 @@ pub fn intersect_all_unit_torus(
     // Compute outward normal at a given t
     let torus_normal_at = |t: f32| -> Vector3<f32> {
         let hit64 = origin64 + dir64 * (t as f64);
-        let sum   = hit64.dot(&hit64) + R * R - r * r;
+        let sum   = hit64.dot(&hit64) + MAJOR_R * MAJOR_R - MINOR_R * MINOR_R;
         let n64   = Vector3::new(
-            4.0 * hit64.x * (sum - 2.0 * R * R),
-            4.0 * hit64.y * (sum - 2.0 * R * R),
+            4.0 * hit64.x * (sum - 2.0 * MAJOR_R * MAJOR_R),
+            4.0 * hit64.y * (sum - 2.0 * MAJOR_R * MAJOR_R),
             4.0 * hit64.z * sum,
         );
         if n64.norm_squared() < 1e-20 {
@@ -334,8 +334,8 @@ pub fn intersect_all_unit_torus(
     let hit_enter = (origin64 + dir64 * (t_enter as f64)).map(|x| x as f32);
     let hit_exit  = (origin64 + dir64 * (t_exit  as f64)).map(|x| x as f32);
 
-    let (ue, ve) = torus_uv(hit_enter, R as f32);
-    let (ux, vx) = torus_uv(hit_exit,  R as f32);
+    let (ue, ve) = torus_uv(hit_enter, MAJOR_R as f32);
+    let (ux, vx) = torus_uv(hit_exit,  MAJOR_R as f32);
 
     Some(IntersectInterval {
         t_enter,

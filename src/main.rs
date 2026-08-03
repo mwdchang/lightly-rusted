@@ -13,7 +13,7 @@ mod models;
 use models::Scene;
 use models::Node;
 use models::read_scene;
-use models::NodeKind;
+use models::NodeType;
 
 mod collisions;
 use collisions::intersect_unit_torus;
@@ -26,7 +26,6 @@ use collisions::HitRecord;
 
 mod collisions_all;
 use collisions_all::{
-    IntersectInterval,
     intersect_all_unit_sphere,
     intersect_all_unit_cube,
     intersect_all_unit_cylinder,
@@ -177,11 +176,18 @@ fn intersect_csg_difference(
     };
     let interval_b = get_primitive_interval(child_b, ray);
 
+
+    #[allow(non_snake_case)]
     let tA_enter = interval_a.t_enter;
+
+    #[allow(non_snake_case)]
     let tA_exit = interval_a.t_exit;
 
     if let Some(i_b) = interval_b {
+        #[allow(non_snake_case)]
         let tB_enter = i_b.t_enter;
+
+        #[allow(non_snake_case)]
         let tB_exit = i_b.t_exit;
 
         // Case 1: No overlap
@@ -312,7 +318,7 @@ fn intersect(
 ) -> Vector3<f32> {
 
     fn visit(node: &Node, ray: &Ray, hits: &mut Vec<HitRecord>, model_cache: &ModelCache) {
-        if node.get_kind() == &NodeKind::CsgDifference {
+        if node.get_node_type() == &NodeType::CsgDifference {
             intersect_csg_difference(node, ray, hits);
             return;
         }
@@ -693,21 +699,6 @@ fn render(
 }
 
 
-use crate::utils::translate;
-use crate::utils::rotate_y;
-
-/*
-fn main() {
-    let root = translate(Vector3::new(0.0, 0.0, 2.0));
-    let child1 = rotate_y(1.0);
-    let child2 = translate(Vector3::new(-4.0, 0.0, 0.0));
-
-
-    println!("{}", child2 * child1);
-}
-*/
-
-
 fn main() {
     let args = Args::parse();
     let mut scene = read_scene(&args.scene_file);
@@ -745,15 +736,6 @@ fn main() {
         }
     }
     println!("Done loading textures");
-
-
-    // println!("Loading textures.....");
-    // load_texture(
-    //     &mut scene.texture_cache,
-    //     "checkered",
-    //     "./checkered.png"
-    // ).unwrap();
-
 
 
     // Camera parameters

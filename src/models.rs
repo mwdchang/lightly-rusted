@@ -36,7 +36,7 @@ pub struct Material {
  * Defaults to Mesh (existing behaviour).
  **/
 #[derive(Debug, Clone, PartialEq)]
-pub enum NodeKind {
+pub enum NodeType {
     Mesh,            // leaf primitive identified by mesh_id
     CsgDifference,   // A − B  (first child = A, second child = B)
     // Future: CsgUnion, CsgIntersection
@@ -47,10 +47,11 @@ pub enum NodeKind {
  * Scene graph structure
 **/
 pub struct Node {
+    pub name: String,
     transform_world: Matrix4<f32>,
     transform_local: Matrix4<f32>,
     transform_inverse: Matrix4<f32>,
-    pub kind: NodeKind,
+    pub node_type: NodeType,
     mesh_id: Option<String>,
     material_id: u32,
     children: Vec<Node>
@@ -82,18 +83,19 @@ pub struct Scene {
 impl Node {
     pub fn new(mesh_id: Option<String>) -> Self {
         Self {
+            name: "".to_string(),
             transform_world: Matrix4::identity(),
             transform_local: Matrix4::identity(),
             transform_inverse: Matrix4::identity(),
-            kind: NodeKind::Mesh,
+            node_type: NodeType::Mesh,
             mesh_id,
             material_id: 0,
             children: vec![],
         }
     }
 
-    pub fn get_kind(&self) -> &NodeKind {
-        &self.kind
+    pub fn get_node_type(&self) -> &NodeType {
+        &self.node_type
     }
 
     pub fn set_mesh_id(&mut self, id: String) {
@@ -172,9 +174,10 @@ impl Node {
     }
 
     fn print_tree_recursive(&self, depth: usize) {
-        let indent = "    ".repeat(depth);
+        let indent = "  ".repeat(depth);
 
-        println!("{}Node: {:?}", indent, self.kind);
+        println!("{}Name: {:?}", indent, self.name);
+        println!("{}Node: {:?}", indent, self.node_type);
 
         if let Some(mesh_id) = &self.mesh_id {
             println!("{}  Mesh: {}", indent, mesh_id);
@@ -182,16 +185,8 @@ impl Node {
             println!("{}  Mesh: None", indent);
         }
 
-        // println!("{}  Local Transform:", indent);
-        // println!("{}{:?}", indent, self.transform_local);
-
         println!("{}  Transform:", indent);
-        // println!("{}{:?}", indent, self.transform_world);
         println!("{}", self.transform_local * self.transform_world);
-
-
-        println!("{}  WTransform:", indent);
-        println!("{}", self.transform_world); 
 
         for (index, child) in self.children.iter().enumerate() {
             println!("{}Child {}:", indent, index);
@@ -449,11 +444,14 @@ pub fn read_scene(filename: &str) -> Scene {
                 node.set_transform(t);
         }
 
-        // Parse node kind — defaults to Mesh if the "type" key is absent
-        let node_type = graph["type"].as_str().unwrap_or("mesh");
+        let node_name = graph["name"].as_str().unwrap_or("").to_string();
+        node.name = node_name;
+
+        // Parse node_type — defaults to Mesh if the "type" key is absent
+        let node_type = graph["node_type"].as_str().unwrap_or("mesh");
         match node_type {
-            "csg_difference" => { node.kind = NodeKind::CsgDifference; }
-            _ => { /* NodeKind::Mesh is already the default */ }
+            "csg_difference" => { node.node_type = NodeType::CsgDifference; }
+            _ => { /* NodeType::Mesh is already the default */ }
         }
 
         if graph.get("mesh_id").is_some() {

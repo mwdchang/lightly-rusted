@@ -267,6 +267,17 @@
     "node": {
       "type": "object",
       "properties": {
+        "name": {
+          "type": "string",
+          "description": "describe the node/branch"
+        },
+
+        "node_type": {
+          "type": "string",
+          "description": "Type of node, either a normal 'mesh' or composite 'csg-difference'",
+          "enum": ["mesh", "csg_difference"]
+        },
+
         "transforms": {
           "type": "array",
           "items": {
