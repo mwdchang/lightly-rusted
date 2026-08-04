@@ -20,6 +20,13 @@
       }
     },
 
+    "directional_lights": {
+      "type": "arrayy",
+      "items": {
+        "$ref": "#/$defs/directionalLight"
+      }
+    },
+
     "materials": {
       "type": "array",
       "items": {
@@ -34,7 +41,6 @@
 
   "required": [
     "environment",
-    "point_lights",
     "materials",
     "root"
   ],
@@ -111,6 +117,23 @@
       },
       "required": [
         "position",
+        "intensity"
+      ]
+    },
+
+    "directionalLight": {
+      "type": "object",
+      "properties": {
+        "direction": {
+          "$ref": "#/$defs/vec3"
+        },
+        "intensity": {
+          "description": "The RGB intensities of the light, not attenuated by distance, so typical values range from [0, 3]",
+          "$ref": "#/$defs/vec3"
+        }
+      },
+      "required": [
+        "direction",
         "intensity"
       ]
     },

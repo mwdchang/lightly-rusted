@@ -1,0 +1,107 @@
+{
+  "description": "Demo",
+  "environment": {
+    "background": [0, 0.0, 0],
+    "ambient_light": [0.2, 0.2, 0.2],
+    "camera_position": [0, 12, 13],
+    "camera_target": [0, 0, 0],
+    "shadows": true,
+    "reflections": true,
+    "refractions": false,
+    "secondary_ray_eps": 0.0275
+  },
+  "point_lights": [
+    {
+      "position": [35, 20, 0],
+      "intensity": [800, 800, 800]
+    }
+  ],
+  "directional_lights": [
+    {
+      "direction": [-1, -0.6, 0],
+      "intensity": [1.1, 1.1, 1.1]
+    }
+  ],
+  "materials": [
+    {
+      "albedo": [0.0, 0.8, 0.0],
+      "shine": 0,
+      "specular": 0.0,
+      "reflectivity": 0.2,
+      "transparency": 0.0,
+      "ior": 1
+    },
+    {
+      "albedo": [1.0, 0.0, 0.0],
+      "shine": 600.0,
+      "specular": 0.5,
+      "reflectivity": 0.4,
+      "transparency": 0.0,
+      "ior": 1
+    }
+  ],
+  "root": {
+    "children": [
+      {
+        "transforms": [
+          { "type": "scale", "value": [50.0, 0.05, 50.0] },
+          { "type": "translate", "value": [0, -2, 0] }
+        ],
+        "children": [
+          {
+            "mesh_id": "cube",
+            "material_id": 0
+          }
+        ]
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [1.0, 2.0, 1.0] },
+          { "type": "translate", "value": [2.5, 0, 4.3] }
+        ],
+        "mesh_id": "cylinder",
+        "material_id": 1
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [1.0, 2.0, 1.0] },
+          { "type": "translate", "value": [5.0, 0.0, 0] }
+        ],
+        "mesh_id": "cylinder",
+        "material_id": 1
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [1.0, 2.0, 1.0] },
+          { "type": "translate", "value": [2.5, 0.0, -4.33] }
+        ],
+        "mesh_id": "cylinder",
+        "material_id": 1
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [1.0, 2.0, 1.0] },
+          { "type": "translate", "value": [-2.5, 0.0, -4.33] }
+        ],
+        "mesh_id": "cylinder",
+        "material_id": 1
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [1.0, 2.0, 1.0] },
+          { "type": "translate", "value": [-5.0, 0.0, 0] }
+        ],
+        "mesh_id": "cylinder",
+        "material_id": 1
+      },
+      {
+        "transforms": [
+          { "type": "scale", "value": [1.0, 2.0, 1.0] },
+          { "type": "translate", "value": [-2.50, 0.0, 4.3] }
+        ],
+        "mesh_id": "cylinder",
+        "material_id": 1
+      }
+    ]
+  }
+}

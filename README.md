@@ -26,6 +26,16 @@ lightly-rusted is written in Rust as demo project for me to learn the language. 
         <img src="examples/csg.png" alt="CSG example">
       </td>
     </tr>
+    <tr>
+      <td>
+        <a href="examples/lights.json">Directional light</a><br>
+        <img src="examples/directional-light.png" alt="Directional light"> 
+      </td>
+      <td>
+        <a href="examples/lights.json">Point light</a><br>
+        <img src="examples/point-light.png" alt="Point light">
+      </td>
+    </tr>
   </tbody>
 </table>
 
@@ -41,7 +51,7 @@ cargo build --release
 ## Running lightly-rusted
 This will create a `render-result.png` file.
 
-Available options are `--workers`, `--scene`, and `--size`.
+Available options are `--workers`, `--scene`, `--size`, and `--fov`.
 
 ```
 # Use all defaults (scene01.json, 400x300, 1 worker)
@@ -55,6 +65,9 @@ Available options are `--workers`, `--scene`, and `--size`.
 
 # Both scene and size
 ./lightly-rusted -- --scene examples/primitives.json --size 800x600
+
+# Wide fied of view
+./lightly-rusted -- --fov 150
 
 # Use custom scene worker 6 worker threads
 ./lightly-rusted -- --scene examples/primitives.json --workers 6
@@ -70,6 +83,7 @@ cargo run -- <arguments>
 
 ## Features
 - Primitive shapes: sphere, cube, cone
+- Point and directional lights
 - Reflection, refraction, shadows
 - Hierarchical scene graph
 - Model meshes (via tobj loader)

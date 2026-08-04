@@ -19,6 +19,11 @@ pub struct PointLight {
     pub intensity: Vector3<f32>,
 }
 
+pub struct DirectionalLight {
+    pub direction: Vector3<f32>,
+    pub intensity: Vector3<f32>,
+}
+
 pub struct Material {
     pub albedo: Option<Vector3<f32>>, // basically diffuse
     pub texture: Option<String>,
@@ -75,6 +80,7 @@ pub struct Scene {
     pub environment: SceneEnvironment,
     root: Node,
     point_lights: Vec<PointLight>,
+    directional_lights: Vec<DirectionalLight>,
     materials: Vec<Material>,
     pub model_cache: ModelCache,
     pub texture_cache: TextureCache,
@@ -211,6 +217,7 @@ impl Scene {
                 secondary_ray_eps: 0.0
             },
             point_lights: vec![],
+            directional_lights: vec![],
             materials: vec![],
             model_cache: ModelCache::new(),
             texture_cache: TextureCache::new(),
@@ -246,6 +253,15 @@ impl Scene {
     pub fn get_point_lights(&self) -> &Vec<PointLight> {
         &self.point_lights
     }
+
+    pub fn add_directional_light(&mut self, dl: DirectionalLight) {
+        self.directional_lights.push(dl);
+    }
+
+    pub fn get_directional_lights(&self) -> &Vec<DirectionalLight> {
+        &self.directional_lights
+    }
+
 
     pub fn add_material(&mut self, m: Material) {
         self.materials.push(m);
@@ -325,28 +341,55 @@ pub fn read_scene(filename: &str) -> Scene {
 
 
     // === Parse lights ===
-    json["point_lights"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .for_each(|light| {
-            let pos = light["position"].as_array().unwrap();
-            let intensity = light["intensity"].as_array().unwrap();
+    if json.get("point_lights").is_some() {
+        json["point_lights"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .for_each(|light| {
+                let pos = light["position"].as_array().unwrap();
+                let intensity = light["intensity"].as_array().unwrap();
 
-            let pl = PointLight {
-                position: Vector3::new(
-                    pos[0].as_f64().unwrap() as f32,
-                    pos[1].as_f64().unwrap() as f32,
-                    pos[2].as_f64().unwrap() as f32,
-                ),
-                intensity: Vector3::new(
-                    intensity[0].as_f64().unwrap() as f32,
-                    intensity[1].as_f64().unwrap() as f32,
-                    intensity[2].as_f64().unwrap() as f32,
-                ),
-            };
-            scene.add_point_light(pl);
-        });
+                let pl = PointLight {
+                    position: Vector3::new(
+                        pos[0].as_f64().unwrap() as f32,
+                        pos[1].as_f64().unwrap() as f32,
+                        pos[2].as_f64().unwrap() as f32,
+                    ),
+                    intensity: Vector3::new(
+                        intensity[0].as_f64().unwrap() as f32,
+                        intensity[1].as_f64().unwrap() as f32,
+                        intensity[2].as_f64().unwrap() as f32,
+                    ),
+                };
+                scene.add_point_light(pl);
+            });
+    }
+
+    if json.get("directional_lights").is_some() {
+        json["directional_lights"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .for_each(|light| {
+                let intensity = light["intensity"].as_array().unwrap();
+                let direction = light["direction"].as_array().unwrap();
+                
+                let dl = DirectionalLight {
+                    direction: Vector3::new(
+                        direction[0].as_f64().unwrap() as f32,
+                        direction[1].as_f64().unwrap() as f32,
+                        direction[2].as_f64().unwrap() as f32,
+                    ),
+                    intensity: Vector3::new(
+                        intensity[0].as_f64().unwrap() as f32,
+                        intensity[1].as_f64().unwrap() as f32,
+                        intensity[2].as_f64().unwrap() as f32,
+                    ),
+                };
+                scene.add_directional_light(dl);
+            })
+    }
 
 
     // === Parse materials ===

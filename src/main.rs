@@ -415,6 +415,95 @@ fn intersect(
     let hit = hit.unwrap();
 
 
+    // Directional light
+    for light in scene.get_directional_lights() {
+        let mut visibility = 1.0;
+        let ldir = (-light.direction).normalize();
+
+        let material = scene.get_materials().get(hit.material_id as usize).unwrap();
+        let ndotl = hit.normal.dot(&ldir).max(0.0);
+
+        let shadow_ray = Ray {
+            direction: ldir,
+            origin: hit.point + hit.normal * scene.environment.secondary_ray_eps
+        };
+
+
+        if scene.environment.shadows == true {
+            let mut shadow_hits:Vec<HitRecord> = vec![];
+            visit(scene.get_root(), &shadow_ray, &mut shadow_hits, &scene.model_cache);
+
+            // Filter out self-intersections/negative t, and sort by t
+            shadow_hits.retain(|h| h.t > 0.001);
+            shadow_hits.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
+
+            for shadow_hit in shadow_hits {
+                let s_material = scene.get_materials().get(shadow_hit.material_id as usize).unwrap();
+                if s_material.transparency == 0.0 {
+                    visibility = 0.0;
+                    break;
+                }
+
+                visibility *= s_material.transparency;
+                if visibility < 0.001 {
+                    break;
+                }
+            }
+        }
+
+
+
+        if material.texture.is_some() {
+            let key = material.texture.as_ref().unwrap();
+            let tex = &scene.texture_cache[key];
+
+            let pixel = sample_texture(
+                &tex, 
+                hit.uv.x, 
+                hit.uv.y
+            );
+            let texture_contrib = Vector3::new(
+                pixel[0] as f32 / 255.0,
+                pixel[1] as f32 / 255.0,
+                pixel[2] as f32 / 255.0,
+            );
+
+            contribution +=
+                texture_contrib.component_mul(
+                    &light.intensity
+                )   
+                * ndotl
+                * visibility;
+        } else {
+            contribution +=
+                material.albedo.unwrap().component_mul(
+                    &light.intensity
+                )   
+                * ndotl
+                * visibility;
+        }
+
+        let view_dir = (camera.get_position() - hit.point).normalize();
+        let halfway = (ldir + view_dir).normalize();
+        let mut spec = hit.normal
+            .dot(&halfway)
+            .max(0.0)
+            .powf(material.shine);
+
+        
+        if ndotl <= 0.0 {
+            spec = 0.0
+        }
+
+        specular += 
+            light.intensity 
+            * spec
+            * material.specular
+            * visibility;
+    }
+
+
+    // Point light
     for light in scene.get_point_lights() {
         // Cast shadow ray to check if the light has any contributions
         let to_light = light.position - hit.point;
@@ -735,7 +824,7 @@ fn main() {
         camera_position,
         camera_target,
         Vector3::y(),
-        60.0,
+        args.fov,
         args.width,
         args.height,
     );
