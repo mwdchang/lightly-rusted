@@ -82,7 +82,7 @@ cargo run -- <arguments>
 
 
 ## Features
-- Primitive shapes: sphere, cube, cone
+- Primitive shapes: sphere, cube, cone, cylinder, torus
 - Point and directional lights
 - Reflection, refraction, shadows
 - Hierarchical scene graph

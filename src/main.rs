@@ -345,14 +345,13 @@ fn intersect(
             intersect_unit_cube(n_ray.origin, n_ray.direction)
         } else if mesh_id == Some("torus") {
             intersect_unit_torus(n_ray.origin, n_ray.direction)
-        } else if mesh_id == Some("bunny") {
-            let m = &model_cache["bunny"];
-            intersect_model(m, n_ray.origin, n_ray.direction)
-        } else if mesh_id == Some("teapot") {
-            let m = &model_cache["teapot"];
-            intersect_model(m, n_ray.origin, n_ray.direction)
         } else {
-            None
+            if mesh_id.is_some() && model_cache.contains_key(mesh_id.unwrap()) {
+                let m = &model_cache[mesh_id.unwrap()];
+                intersect_model(m, n_ray.origin, n_ray.direction)
+            } else {
+                None
+            }
         };
 
         if res.is_some() {
