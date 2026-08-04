@@ -7,6 +7,7 @@ use std::fs::File;
 use crate::obj::ModelCache;
 use crate::texture::TextureCache;
 
+use crate::utils::max_distance;
 use crate::utils::translate;
 use crate::utils::rotate_x;
 use crate::utils::rotate_y;
@@ -71,7 +72,8 @@ pub struct SceneEnvironment {
     pub shadows: bool,
     pub reflections: bool,
     pub refractions: bool,
-    pub secondary_ray_eps: f32
+    pub secondary_ray_eps: f32,
+    pub debug: String,
 }
 
 
@@ -84,6 +86,7 @@ pub struct Scene {
     materials: Vec<Material>,
     pub model_cache: ModelCache,
     pub texture_cache: TextureCache,
+    pub max_dist: f32,
 }
 
 impl Node {
@@ -199,6 +202,29 @@ impl Node {
             child.print_tree_recursive(depth + 1);
         }
     }
+
+    pub fn get_approximate_bb(&self) -> (Vector3<f32>, Vector3<f32>) {
+        if self.children.is_empty() {
+            let transform = self.transform_local * self.transform_world;
+            let translation = Vector3::new(transform[(0, 3)], transform[(1, 3)], transform[(2, 3)]);
+            (translation, translation)
+        } else {
+            let mut min = Vector3::new(f32::INFINITY, f32::INFINITY, f32::INFINITY);
+            let mut max = Vector3::new(f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+
+            for child in &self.children {
+                let (c_min, c_max) = child.get_approximate_bb();
+                min.x = min.x.min(c_min.x);
+                min.y = min.y.min(c_min.y);
+                min.z = min.z.min(c_min.z);
+
+                max.x = max.x.max(c_max.x);
+                max.y = max.y.max(c_max.y);
+                max.z = max.z.max(c_max.z);
+            }
+            (min, max)
+        }
+    }
 }
 
 impl Scene {
@@ -214,13 +240,15 @@ impl Scene {
                 shadows: true,
                 reflections: true,
                 refractions: true,
-                secondary_ray_eps: 0.0
+                secondary_ray_eps: 0.0,
+                debug: "none".to_string() 
             },
             point_lights: vec![],
             directional_lights: vec![],
             materials: vec![],
             model_cache: ModelCache::new(),
             texture_cache: TextureCache::new(),
+            max_dist: 10.0
         }
     }
 
@@ -286,6 +314,7 @@ impl Scene {
         }
 
         self.root.print_tree_recursive(0);
+        println!("max_dist: {}", self.max_dist);
     }
 }
 
@@ -311,6 +340,11 @@ pub fn read_scene(filename: &str) -> Scene {
 
     let secondary_ray_eps = env["secondary_ray_eps"].as_f64().unwrap() as f32;
 
+    let mut debug = "none";
+    if env.get("debug").is_some() {
+        debug = env["debug"].as_str().unwrap();
+    }
+
     let scene_env = SceneEnvironment {
         background: Vector3::new(
             background[0].as_f64().unwrap() as f32,
@@ -335,7 +369,8 @@ pub fn read_scene(filename: &str) -> Scene {
         shadows,
         reflections,
         refractions,
-        secondary_ray_eps
+        secondary_ray_eps,
+        debug: debug.to_string()
     };
     scene.set_environment(scene_env);
 
@@ -524,6 +559,11 @@ pub fn read_scene(filename: &str) -> Scene {
 
     let root = visit( &json["root"] );
     scene.set_root(root);
+
+    // Calculate approximate max distance from camera
+    let (min, max) = scene.root.get_approximate_bb();
+    let max_d = max_distance(min, max, scene.environment.camera_position);
+    scene.max_dist = max_d;
 
     return scene
 }

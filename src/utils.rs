@@ -39,3 +39,15 @@ pub fn clean(v: f64) -> f64 {
     }
 }
 
+
+#[allow(dead_code)]
+pub fn max_distance(
+    min: Vector3<f32>,
+    max: Vector3<f32>,
+    view: Vector3<f32>,
+) -> f32 {
+    let dx = (view.x - min.x).abs().max((view.x - max.x).abs());
+    let dy = (view.y - min.y).abs().max((view.y - max.y).abs());
+    let dz = (view.z - min.z).abs().max((view.z - max.z).abs());
+    (dx * dx + dy * dy + dz * dz).sqrt()
+}

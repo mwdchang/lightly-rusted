@@ -49,7 +49,6 @@ use texture::sample_texture;
 
 use std::fs;
 
-
 /** format
 vim.keymap.set("n", "<leader>f", function()
     vim.lsp.buf.format()
@@ -412,6 +411,18 @@ fn intersect(
     }
 
     let hit = hit.unwrap();
+
+    // Debug
+    if scene.environment.debug != "none" {
+        if scene.environment.debug == "normal" {
+            return (hit.normal + Vector3::new(1.0, 1.0, 1.0)) * 0.5;
+        } else if scene.environment.debug == "depth" {
+            // Kinda assume we are usually looking at the center of a scene
+            // so need to double it
+            let max_dist = 2.0 * scene.max_dist;
+            return Vector3::new(1.0, 1.0, 1.0) - (hit.t / max_dist) * Vector3::new(1.0, 1.0, 1.0);
+        }
+    }
 
 
     // Directional light
